@@ -1,0 +1,3 @@
+flutter_native_splash:
+  color: "FFF48FB1" # Цвет фона
+  image: assets/icons/ic1.png # Путь к изображению для экрана загрузки
