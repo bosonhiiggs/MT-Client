@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+ import 'package:flutter/material.dart';
 
 class PasswordResetScreen extends StatefulWidget {
   @override
@@ -87,9 +87,17 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   SizedBox(
-                    width: 150, // Изменить размер кнопки
+                    width: 200, // Изменить размер кнопки
                     child: ElevatedButton(
                       child: Text('Сменить пароль'),
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: Color(0xFFF48FB1),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                          side: BorderSide(color: Colors.white),
+                        ),
+                      ),
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
                           _formKey.currentState!.save();

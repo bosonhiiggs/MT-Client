@@ -93,7 +93,10 @@ class RegistrationScreen extends StatelessWidget {
               children: [
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    minimumSize: Size(80, 40),
+                    foregroundColor: Colors.white,
+                    backgroundColor: Color(0xFFF48FB1),
+                    minimumSize: Size(80, 40), // Изменить цвет текста
+                    side: BorderSide(color: Colors.white), // Добавить обводку
                   ),
                   child: Text('Зарегистрироваться', style: TextStyle(fontSize: 16)),
                   onPressed: () {

@@ -73,6 +73,14 @@ class _PasswordRecoveryConfirmationCodeScreenState
                   width: 150, // Изменить размер кнопки
                   child: ElevatedButton(
                     child: Text('Подтвердить'),
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Color(0xFFF48FB1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30.0),
+                        side: BorderSide(color: Colors.white),
+                      ),
+                    ),
                     onPressed: () {
                       if (_confirmationCodeController.text == _confirmationCode) {
                         Navigator.push(

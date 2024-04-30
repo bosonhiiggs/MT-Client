@@ -54,6 +54,14 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                   width: 150, // Изменить размер кнопки
                   child: ElevatedButton(
                     child: Text('Восстановить'),
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Color(0xFFF48FB1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30.0),
+                        side: BorderSide(color: Colors.white),
+                      ),
+                    ),
                     onPressed: () {
                       if (emailController.text.isEmpty) {
                         showDialog(
