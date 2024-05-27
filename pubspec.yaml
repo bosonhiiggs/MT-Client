@@ -13,6 +13,8 @@ dependencies:
     sdk: flutter
   flutter_native_splash: ^2.2.19
 
+  firebase_auth: ^3.3.1
+
   cupertino_icons: ^1.0.6
 
 dev_dependencies:
@@ -32,6 +34,8 @@ flutter:
 flutter_icons:
   android: true
   image_path: "assets/icons/ic1.png"
+
+
 
 
 

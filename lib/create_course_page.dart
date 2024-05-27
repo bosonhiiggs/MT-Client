@@ -63,7 +63,10 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
                 ),
               ),
               onPressed: () {
-                // ваш код для размещения бесплатного курса
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => CreateCoursePage()),
+                );
               },
             ),
           ],
@@ -72,3 +75,4 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
     );
   }
 }
+
