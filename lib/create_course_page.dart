@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'create_course_page2.dart';
 class CreateCoursePage extends StatefulWidget {
   @override
   _CreateCoursePageState createState() => _CreateCoursePageState();
@@ -65,7 +65,7 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => CreateCoursePage()),
+                  MaterialPageRoute(builder: (context) => CreateCoursePage2()),
                 );
               },
             ),
