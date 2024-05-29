@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'custom_splash_screen.dart';
 import 'registration_screen.dart';
 import 'password_recovery_screen.dart';
 import 'music_courses_screen.dart';
+import 'package:appmetrica_plugin/appmetrica_plugin.dart';
 
 
-void main() async {
+
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  AppMetrica.activate(AppMetricaConfig("06bffc38-8f82-4cba-96e6-1c6ae56a587e"));
   runApp(MyApp());
 }
 
@@ -66,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: TextFormField(
                   controller: _loginController,
                   decoration: InputDecoration(
-                    labelText: 'Email',
+                    labelText: 'Логин',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(4.0),
                       borderSide: BorderSide.none,
@@ -84,7 +84,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _passwordController,
                   decoration: InputDecoration(
                     labelText: 'Пароль',
-                    hintText: null,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(4.0),
                       borderSide: BorderSide.none,
@@ -108,30 +107,17 @@ class _LoginScreenState extends State<LoginScreen> {
                           side: BorderSide(color: Colors.white),
                         ),
                       ),
-                      onPressed: () async {
-                        try {
-                          UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-                            email: _loginController.text,
-                            password: _passwordController.text,
-                          );
+                      onPressed: () {
+                        AppMetrica.reportEvent('Авторизация');
+                        if (_loginController.text.isNotEmpty && _passwordController.text.isNotEmpty) {
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (context) => MusicCoursesScreen()),
                           );
-                        } on FirebaseAuthException catch (e) {
-                          if (e.code == 'user-not-found') {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Пользователь с таким email не найден')),
-                            );
-                          } else if (e.code == 'wrong-password') {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Неверный пароль')),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Ошибка при входе. Пожалуйста, попробуйте снова')),
-                            );
-                          }
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Введите логин и пароль')),
+                          );
                         }
                       },
                     ),
@@ -148,6 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(color: Colors.black),
                     ),
                     onPressed: () {
+                      AppMetrica.reportEvent('Восстановление пароля');
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => PasswordRecoveryScreen()),
@@ -160,6 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(color: Colors.black),
                     ),
                     onPressed: () {
+                      AppMetrica.reportEvent('Регистрация');
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => RegistrationScreen()),

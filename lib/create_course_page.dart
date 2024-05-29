@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'create_course_page2.dart';
+import 'package:appmetrica_plugin/appmetrica_plugin.dart';
+
+
+
 class CreateCoursePage extends StatefulWidget {
   @override
   _CreateCoursePageState createState() => _CreateCoursePageState();
@@ -39,7 +43,7 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
                 ),
               ),
               onPressed: () {
-                // ваш код для размещения платного курса
+                AppMetrica.reportEvent('Создание платного курса');
               },
             ),
             SizedBox(height: 16.0),
@@ -63,6 +67,7 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
                 ),
               ),
               onPressed: () {
+                AppMetrica.reportEvent('Создание бесплатного курса');
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => CreateCoursePage2()),
