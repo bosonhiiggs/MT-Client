@@ -57,7 +57,7 @@ class _PasswordRecoveryConfirmationCodeScreenState
               child: TextFormField(
                 controller: _confirmationCodeController,
                 decoration: InputDecoration(
-                  labelText: 'Код подтверждения',
+                  hintText: 'Код подтверждения',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(4.0),
                     borderSide: BorderSide.none,

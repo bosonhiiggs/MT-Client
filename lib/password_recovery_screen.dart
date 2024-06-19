@@ -38,7 +38,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
               child: TextFormField(
                 controller: emailController,
                 decoration: InputDecoration(
-                  labelText: 'Электронная почта',
+                  hintText: 'Электронная почта',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(4.0),
                     borderSide: BorderSide.none,
@@ -103,7 +103,9 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => PasswordRecoveryConfirmationCodeScreen(email: emailController.text),
+                            builder: (context) =>
+                                PasswordRecoveryConfirmationCodeScreen(
+                                    email: emailController.text),
                           ),
                         );
                       }
@@ -112,7 +114,8 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                 ),
               ],
             ),
-            Expanded(child: SizedBox()), // Добавить пустое пространство между кнопкой "Восстановить" и текстами
+            Expanded(child: SizedBox()),
+            // Добавить пустое пространство между кнопкой "Восстановить" и текстами
           ],
         ),
       ),

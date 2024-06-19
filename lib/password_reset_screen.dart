@@ -1,4 +1,4 @@
- import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 class PasswordResetScreen extends StatefulWidget {
   @override
@@ -7,8 +7,25 @@ class PasswordResetScreen extends StatefulWidget {
 
 class _PasswordResetScreenState extends State<PasswordResetScreen> {
   final _formKey = GlobalKey<FormState>();
-  String _newPassword = '';
-  String _confirmPassword = '';
+  final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  void _showErrorSnackbar() {
+    final snackBar = SnackBar(
+      content: Text('Пароли не совпадают'),
+      backgroundColor: Colors.black,
+      duration: Duration(seconds: 5),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,12 +52,13 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
               SizedBox(height: 48.0),
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white, // Установить цвет фона
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(4.0),
                 ),
                 child: TextFormField(
+                  controller: _newPasswordController,
                   decoration: InputDecoration(
-                    labelText: 'Новый пароль',
+                    hintText: 'Новый пароль',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(4.0),
                       borderSide: BorderSide.none,
@@ -53,16 +71,16 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
                     }
                     return null;
                   },
-                  onSaved: (value) => _newPassword = value!,
                 ),
               ),
               SizedBox(height: 16.0),
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white, // Установить цвет фона
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(4.0),
                 ),
                 child: TextFormField(
+                  controller: _confirmPasswordController,
                   decoration: InputDecoration(
                     labelText: 'Подтвердите новый пароль',
                     border: OutlineInputBorder(
@@ -75,8 +93,9 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
                     if (value == null || value.isEmpty) {
                       return 'Пожалуйста, подтвердите новый пароль';
                     }
-                    if (value != _newPassword) {
-                      return 'Пароли не совпадают';
+                    if (value != _newPasswordController.text) {
+                      _showErrorSnackbar();
+                      return null; // Возвращаем null, чтобы не показывать текст ошибки под полем
                     }
                     return null;
                   },
@@ -87,7 +106,7 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   SizedBox(
-                    width: 200, // Изменить размер кнопки
+                    width: 200,
                     child: ElevatedButton(
                       child: Text('Сменить пароль'),
                       style: ElevatedButton.styleFrom(
@@ -100,9 +119,8 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
                       ),
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
-                          _formKey.currentState!.save();
                           // Обработка смены пароля
-                          print('New password: $_newPassword');
+                          print('New password: ${_newPasswordController.text}');
                         }
                       },
                     ),
