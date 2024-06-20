@@ -21,6 +21,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
 
   String _introduction = '';
   List<String> _lessons = [];
+  int _moduleIndex = 1;
 
   @override
   Widget build(BuildContext context) {
@@ -36,77 +37,63 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               Container(
-                  padding: EdgeInsets.all(16.0),
-                  decoration: BoxDecoration(
-                    color: Color(0xFFF48FB1),
-                    borderRadius: BorderRadius.circular(8.0),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.5),
-                        spreadRadius: 2,
-                        blurRadius: 5,
-                        offset: Offset(0, 3),
+                padding: EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: Color(0xFFF48FB1),
+                  borderRadius: BorderRadius.circular(8.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.5),
+                      spreadRadius: 2,
+                      blurRadius: 5,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.courseName,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.courseName,
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      widget.courseDescription,
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.white,
                       ),
-                      SizedBox(height: 8),
-                      Text(
-                        widget.courseDescription,
-                        style: TextStyle(
-
-                          fontSize: 18,
-                          color: Colors.white,
-                        ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      widget.courseAbout,
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.white,
                       ),
-                      SizedBox(height: 8),
-                      Text(
-                        widget.courseAbout,
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  )),
+                    ),
+                  ],
+                ),
+              ),
               SizedBox(height: 16),
               if (_introduction.isNotEmpty)
                 Dismissible(
                   key: UniqueKey(),
                   direction: DismissDirection.horizontal,
-                  background: Container(
-                    color: Colors.white,
-                    alignment: Alignment.centerRight,
 
-                    padding: EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Icon(Icons.delete, color: Color(0xFFF48FB1)),
-                        SizedBox(width: MediaQuery.of(context).size.width - 120),
-                        Icon(Icons.delete, color: Color(0xFFF48FB1)),
-                      ],
-                    ),
-                  ),
                   onDismissed: (direction) {
                     setState(() {
                       _introduction = '';
                     });
                   },
                   child: ElevatedButton(
-                    child: Text('Модуль 1'),
+                    child: Text('$_moduleIndex. Модуль'),
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.white,
                       backgroundColor: Color(0xFFF48FB1),
@@ -123,7 +110,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                             courseName: widget.courseName,
                             courseDescription: widget.courseDescription,
                             courseAbout: widget.courseAbout,
-                            moduleIndex: 0,
+                            moduleIndex: _moduleIndex - 1,
                             moduleName: _lessons[0],
                           ),
                         ),
@@ -139,26 +126,27 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                 ),
               ..._lessons.asMap().entries.map((entry) {
                 int index = entry.key + 1;
-                return Dismissible(
-                  key: UniqueKey(),
-                  direction: DismissDirection.horizontal,
-                  background: Container(
-                    color: Colors.white,
-                    alignment: Alignment.centerLeft,
-                    padding: EdgeInsets.symmetric(horizontal: 20),
-                    child: Icon(
-                      Icons.delete,
-                      color: Color(0xFFF48FB1),
-                    ),
-                  ),
-                  onDismissed: (direction) {
-                    setState(() {
-                      _lessons.removeAt(index - 1);
-                    });
-                  },
-                  child: Column(
-                    children: [
-                      ElevatedButton(
+                return Column(
+                  children: [
+                    SizedBox(height: 4), // Reduced vertical spacing
+                    Dismissible(
+                      key: UniqueKey(),
+                      direction: DismissDirection.horizontal,
+                      background: Container(
+                        color: Colors.white,
+                        alignment: Alignment.centerLeft,
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        child: Icon(
+                          Icons.delete,
+                          color: Color(0xFFF48FB1),
+                        ),
+                      ),
+                      onDismissed: (direction) {
+                        setState(() {
+                          _lessons.removeAt(index - 1);
+                        });
+                      },
+                      child: ElevatedButton(
                         child: Text('$index. ${entry.value}'),
                         style: ElevatedButton.styleFrom(
                           foregroundColor: Colors.white,
@@ -176,21 +164,20 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                                 courseName: widget.courseName,
                                 courseDescription: widget.courseDescription,
                                 courseAbout: widget.courseAbout,
-                                moduleIndex: 0,
-                                moduleName: _lessons[0],
+                                moduleIndex: index - 1,
+                                moduleName: entry.value,
                               ),
                             ),
                           ).then((value) {
                             setState(() {
-                              _lessons = value[1];
-                              _introduction = 'Модуль $index: ${value[0]}';
+                              _lessons[index - 1] = value[0];
+                              _introduction = '$index. ${value[0]}';
                             });
                           });
                         },
                       ),
-                      SizedBox(height: 8),
-                    ],
-                  ),
+                    ),
+                  ],
                 );
               }),
               ElevatedButton(
@@ -205,6 +192,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                 onPressed: () {
                   setState(() {
                     _lessons.add('Новый модуль');
+                    _moduleIndex++;
                   });
                 },
               ),

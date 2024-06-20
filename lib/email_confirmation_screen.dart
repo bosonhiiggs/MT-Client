@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
+import 'package:http/http.dart' as http; // Импортируйте пакет http
+import 'dart:convert'; // Для кодировки JSON
 import 'password_reset_screen.dart';
+import 'music_courses_screen.dart'; // Импортируйте экран курсов
 
 class PasswordRecoveryConfirmationCodeScreen extends StatefulWidget {
   final String email;
@@ -8,24 +10,60 @@ class PasswordRecoveryConfirmationCodeScreen extends StatefulWidget {
   PasswordRecoveryConfirmationCodeScreen({required this.email});
 
   @override
-  _PasswordRecoveryConfirmationCodeScreenState createState() =>
-      _PasswordRecoveryConfirmationCodeScreenState();
+  _PasswordRecoveryConfirmationCodeScreenState createState() => _PasswordRecoveryConfirmationCodeScreenState();
 }
 
-class _PasswordRecoveryConfirmationCodeScreenState
-    extends State<PasswordRecoveryConfirmationCodeScreen> {
-  String _confirmationCode = '';
-  final _confirmationCodeController = TextEditingController();
+class _PasswordRecoveryConfirmationCodeScreenState extends State<PasswordRecoveryConfirmationCodeScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _confirmationCodeController = TextEditingController();
 
   @override
-  void initState() {
-    super.initState();
-    _generateConfirmationCode();
+  void dispose() {
+    _confirmationCodeController.dispose();
+    super.dispose();
   }
 
-  void _generateConfirmationCode() {
-    var random = Random();
-    _confirmationCode = (random.nextInt(900000) + 100000).toString();
+  void _showErrorSnackbar(String message) {
+    final snackBar = SnackBar(
+      content: Text(message),
+      backgroundColor: Colors.black,
+      duration: Duration(seconds: 5),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
+  Future<void> _verifyCode() async {
+    final String url = 'http://80.90.187.60:8001/api/auth/signup/confirm';
+    final String confirmationCode = _confirmationCodeController.text;
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'confirm_code': confirmationCode}),
+      );
+
+      print('Response status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        // Если код верен, переходите на MusicCoursesScreen
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => MusicCoursesScreen()),
+        );
+      } else if (response.statusCode == 400) {
+        // Если код неверен, покажите ошибку
+        _showErrorSnackbar('Неправильный код подтверждения');
+      } else {
+        // Обработка других статусов
+        _showErrorSnackbar('Произошла ошибка. Попробуйте позже.');
+      }
+    } catch (error) {
+      // Обработка ошибок сети и других исключений
+      _showErrorSnackbar('Произошла ошибка. Проверьте подключение к интернету.');
+      print('Error: $error');
+    }
   }
 
   @override
@@ -33,91 +71,68 @@ class _PasswordRecoveryConfirmationCodeScreenState
     return Scaffold(
       backgroundColor: Color(0xFFF48FB1),
       appBar: AppBar(
-        title: Text('Music Trainee'),
+        title: Text('Подтверждение кода'),
         centerTitle: true,
         backgroundColor: Color(0xFFF48FB1),
       ),
       body: Padding(
         padding: EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Text(
-              'Введите код подтверждения',
-              style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 48.0),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white, // Установить цвет фона
-                borderRadius: BorderRadius.circular(4.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Text(
+                'Введите код подтверждения, отправленный на ваш email',
+                style: TextStyle(fontSize: 18.0),
+                textAlign: TextAlign.center,
               ),
-              child: TextFormField(
-                controller: _confirmationCodeController,
-                decoration: InputDecoration(
-                  labelText: 'Код подтверждения',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(4.0),
-                    borderSide: BorderSide.none,
+              SizedBox(height: 16.0),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(4.0),
+                ),
+                child: TextFormField(
+                  controller: _confirmationCodeController,
+                  decoration: InputDecoration(
+                    hintText: 'Код подтверждения',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(4.0),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Пожалуйста, введите код';
+                    }
+                    return null;
+                  },
                 ),
               ),
-            ),
-            SizedBox(height: 16.0),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                SizedBox(
-                  width: 150, // Изменить размер кнопки
-                  child: ElevatedButton(
-                    child: Text('Подтвердить'),
+              SizedBox(height: 16.0),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.white,
                       backgroundColor: Color(0xFFF48FB1),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30.0),
-                        side: BorderSide(color: Colors.white),
-                      ),
+                      minimumSize: Size(80, 40),
+                      side: BorderSide(color: Colors.white),
                     ),
-                    onPressed: () {
-                      if (_confirmationCodeController.text == _confirmationCode) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => PasswordResetScreen()),
-                        );
-                      } else {
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: Text('Ошибка'),
-                              content: Text('Неправильный код подтверждения'),
-                              actions: <Widget>[
-                                TextButton(
-                                  child: Text('OK'),
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                ),
-                              ],
-                            );
-                          },
-                        );
+                    child: Text('Подтвердить', style: TextStyle(fontSize: 16)),
+                    onPressed: () async {
+                      if (_formKey.currentState!.validate()) {
+                        await _verifyCode();
                       }
                     },
                   ),
-                ),
-              ],
-            ),
-            Expanded(child: SizedBox()), // Добавить пустое пространство между кнопкой "Подтвердить" и текстами
-            Text(
-              'Код подтверждения: $_confirmationCode',
-              style: TextStyle(fontSize: 16.0),
-              textAlign: TextAlign.center,
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

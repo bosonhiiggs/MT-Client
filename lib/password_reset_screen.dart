@@ -1,4 +1,7 @@
- import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:client/main.dart'; // Подключите ваш основной файл приложения, если необходимо
 
 class PasswordResetScreen extends StatefulWidget {
   @override
@@ -7,8 +10,73 @@ class PasswordResetScreen extends StatefulWidget {
 
 class _PasswordResetScreenState extends State<PasswordResetScreen> {
   final _formKey = GlobalKey<FormState>();
-  String _newPassword = '';
-  String _confirmPassword = '';
+  final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _emailCodeController = TextEditingController();
+
+  @override
+  void dispose() {
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    _emailCodeController.dispose();
+    super.dispose();
+  }
+
+  void _showErrorSnackbar(String message) {
+    final snackBar = SnackBar(
+      content: Text(message),
+      backgroundColor: Colors.black,
+      duration: Duration(seconds: 5),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
+  Future<void> _resetPassword() async {
+    if (_formKey.currentState!.validate()) {
+      final String resetCode = _emailCodeController.text;
+      final String newPassword = _newPasswordController.text;
+
+      // Проверка на совпадение паролей
+      if (_newPasswordController.text != _confirmPasswordController.text) {
+        _showErrorSnackbar('Пароли не совпадают');
+        return;
+      }
+
+      final url = Uri.parse('http://80.90.187.60:8001/api/auth/reset-confirm/');
+      final Map<String, String> requestBody = {
+        'reset_code': resetCode,
+        'new_password': newPassword,
+      };
+
+      try {
+        final response = await http.post(
+          url,
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: jsonEncode(requestBody),
+        );
+
+        if (response.statusCode == 201) {
+          // Успех: пароль успешно сброшен
+          print('Пароль успешно сброшен');
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => MyApp()),
+          );
+        } else {
+          // Ошибка: показать сообщение об ошибке
+          _showErrorSnackbar('Не удалось сбросить пароль. Пожалуйста, попробуйте снова.');
+          print('Не удалось сбросить пароль. Код ошибки: ${response.statusCode}');
+        }
+      } catch (e) {
+        // Ошибка запроса
+        _showErrorSnackbar('Произошла ошибка при отправке запроса.');
+        print('Ошибка запроса: $e');
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,12 +103,13 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
               SizedBox(height: 48.0),
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white, // Установить цвет фона
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(4.0),
                 ),
                 child: TextFormField(
+                  controller: _newPasswordController,
                   decoration: InputDecoration(
-                    labelText: 'Новый пароль',
+                    hintText: 'Новый пароль',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(4.0),
                       borderSide: BorderSide.none,
@@ -53,18 +122,18 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
                     }
                     return null;
                   },
-                  onSaved: (value) => _newPassword = value!,
                 ),
               ),
               SizedBox(height: 16.0),
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white, // Установить цвет фона
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(4.0),
                 ),
                 child: TextFormField(
+                  controller: _confirmPasswordController,
                   decoration: InputDecoration(
-                    labelText: 'Подтвердите новый пароль',
+                    hintText: 'Подтвердите новый пароль',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(4.0),
                       borderSide: BorderSide.none,
@@ -75,8 +144,28 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
                     if (value == null || value.isEmpty) {
                       return 'Пожалуйста, подтвердите новый пароль';
                     }
-                    if (value != _newPassword) {
-                      return 'Пароли не совпадают';
+                    return null;
+                  },
+                ),
+              ),
+              SizedBox(height: 16.0),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(4.0),
+                ),
+                child: TextFormField(
+                  controller: _emailCodeController,
+                  decoration: InputDecoration(
+                    hintText: 'Код с почты',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(4.0),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Пожалуйста, введите код с почты';
                     }
                     return null;
                   },
@@ -87,7 +176,7 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   SizedBox(
-                    width: 200, // Изменить размер кнопки
+                    width: 200,
                     child: ElevatedButton(
                       child: Text('Сменить пароль'),
                       style: ElevatedButton.styleFrom(
@@ -98,13 +187,7 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
                           side: BorderSide(color: Colors.white),
                         ),
                       ),
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          _formKey.currentState!.save();
-                          // Обработка смены пароля
-                          print('New password: $_newPassword');
-                        }
-                      },
+                      onPressed: _resetPassword,
                     ),
                   ),
                 ],
