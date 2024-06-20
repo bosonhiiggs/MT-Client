@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'create_course_page3.dart';
 
 class CreateCoursePage2 extends StatefulWidget {
   @override
@@ -74,17 +75,21 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
               ),
               ElevatedButton(
                 child: Text('Создать курс'),
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: Color(0xFFF48FB1),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30.0),
-                  ),
-                ),
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
                     _formKey.currentState!.save();
-                    // Добавить действия по сохранению данных или переходу на следующий экран
+                    
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CreateCoursePage3(
+                          courseName: _courseName,
+                          courseDescription: _courseDescription,
+                          courseAbout: _courseAbout,
+                        ),
+                      ),
+                    );
+
                   }
                 },
               ),
