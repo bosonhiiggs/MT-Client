@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'email_confirmation_screen.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'password_reset_screen.dart';
+
 
 class PasswordRecoveryScreen extends StatefulWidget {
   @override
@@ -8,6 +11,46 @@ class PasswordRecoveryScreen extends StatefulWidget {
 
 class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
   final emailController = TextEditingController();
+
+  Future<void> sendPasswordRecoveryRequest(String email) async {
+    final url = Uri.parse('http://80.90.187.60:8001/api/auth/reset-request/');
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
+
+      // Logging response content to console
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 201) {
+        // Navigate to the confirmation code screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PasswordResetScreen(),
+          ),
+        );
+      } else if (response.statusCode == 400) {
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Такой почты не существует')),
+        );
+      } else {
+        // Handle other status codes or errors
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Произошла ошибка. Пожалуйста, попробуйте позже.')),
+        );
+      }
+    } catch (e) {
+      // Handle network or server errors
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка сети: ${e.toString()}')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,13 +75,13 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
             SizedBox(height: 48.0),
             Container(
               decoration: BoxDecoration(
-                color: Colors.white, // Установить цвет фона
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(4.0),
               ),
               child: TextFormField(
                 controller: emailController,
                 decoration: InputDecoration(
-                  labelText: 'Электронная почта',
+                  hintText: 'Электронная почта',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(4.0),
                     borderSide: BorderSide.none,
@@ -51,7 +94,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 SizedBox(
-                  width: 150, // Изменить размер кнопки
+                  width: 150,
                   child: ElevatedButton(
                     child: Text('Восстановить'),
                     style: ElevatedButton.styleFrom(
@@ -63,56 +106,18 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                       ),
                     ),
                     onPressed: () {
-                      if (emailController.text.isEmpty) {
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: Text('Ошибка'),
-                              content: Text('Введите электронную почту'),
-                              actions: <Widget>[
-                                TextButton(
-                                  child: Text('OK'),
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                      } else if (!emailController.text.contains('@')) {
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: Text('Ошибка'),
-                              content: Text('Такой почты не существует'),
-                              actions: <Widget>[
-                                TextButton(
-                                  child: Text('OK'),
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                      } else {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PasswordRecoveryConfirmationCodeScreen(email: emailController.text),
-                          ),
-                        );
-                      }
+                        sendPasswordRecoveryRequest(emailController.text);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => PasswordResetScreen()),
+                      );
                     },
+
                   ),
                 ),
               ],
             ),
-            Expanded(child: SizedBox()), // Добавить пустое пространство между кнопкой "Восстановить" и текстами
+            Expanded(child: SizedBox()),
           ],
         ),
       ),

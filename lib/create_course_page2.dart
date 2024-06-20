@@ -32,6 +32,7 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
                 decoration: InputDecoration(
                   labelText: 'Название курса',
                 ),
+                maxLines: null, // Позволяет тексту автоматически переноситься на новую строку
                 validator: (value) {
                   if (value!.isEmpty) {
                     return 'Пожалуйста, введите название курса';
@@ -46,6 +47,7 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
                 decoration: InputDecoration(
                   labelText: 'Чему учит курс',
                 ),
+                maxLines: null, // Позволяет тексту автоматически переноситься на новую строку
                 validator: (value) {
                   if (value!.isEmpty) {
                     return 'Пожалуйста, введите описание чему учит курс';
@@ -60,6 +62,7 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
                 decoration: InputDecoration(
                   labelText: 'О курсе',
                 ),
+                maxLines: null, // Позволяет тексту автоматически переноситься на новую строку
                 validator: (value) {
                   if (value!.isEmpty) {
                     return 'Пожалуйста, введите описание курса';
@@ -75,6 +78,7 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
                     _formKey.currentState!.save();
+                    
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -85,6 +89,7 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
                         ),
                       ),
                     );
+
                   }
                 },
               ),
