@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'music_courses_screen.dart'; // Импортируйте страницу курсов
+import 'email_confirmation_screen.dart'; // Импортируйте экран с кодом подтверждения
 
 class RegistrationScreen extends StatefulWidget {
   @override
@@ -68,7 +68,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       print('Статус ответа: ${response.statusCode}');
       print('Тело ответа: ${response.body}');
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201) {
         return true; // Успешная регистрация
       } else if (response.statusCode == 400) {
         final responseData = json.decode(response.body);
@@ -233,7 +233,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         if (isRegistered) {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => MusicCoursesScreen()),
+                            MaterialPageRoute(
+                              builder: (context) => PasswordRecoveryConfirmationCodeScreen(email: _emailController.text),
+                            ),
                           );
                         }
                       }
