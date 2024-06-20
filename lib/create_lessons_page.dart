@@ -20,149 +20,191 @@ class CreateLessonPage extends StatefulWidget {
 }
 
 class _CreateLessonPageState extends State<CreateLessonPage> {
-  final _formKey = GlobalKey<FormState>();
-
+  late String _moduleName;
+  late TextEditingController _moduleNameController;
   List<String> _lessons = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _moduleName = widget.moduleName;
+    _moduleNameController = TextEditingController(text: _moduleName);
+    _lessons.add('1. Новый урок');
+  }
+
+  @override
+  void dispose() {
+    _moduleNameController.dispose();
+    super.dispose();
+  }
+
+  void _reindexLessons(int index) {
+    setState(() {
+      _lessons.removeAt(index);
+      for (int i = index; i < _lessons.length; i++) {
+        _lessons[i] = '${i + 1}. ${_lessons[i].split('.').last}';
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Создание урока'),
+        title: Text('Создание уроков'),
         centerTitle: true,
         backgroundColor: Color(0xFFF48FB1),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: EdgeInsets.all(16.0),
-                decoration: BoxDecoration(
-                  color: Color(0xFFF48FB1),
-                  borderRadius: BorderRadius.circular(8.0),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.5),
-                      spreadRadius: 2,
-                      blurRadius: 5,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.moduleName,
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Модуль ${widget.moduleIndex + 1}',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    TextFormField(
-                      initialValue: _lessons.isNotEmpty ? _lessons[0] : null,
-                      decoration: InputDecoration(
-                        labelText: 'Название урока',
-                        labelStyle: TextStyle(
-                          color: Colors.white,
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(16.0),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF48FB1),
+                      borderRadius: BorderRadius.circular(8.0),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.5),
+                          spreadRadius: 2,
+                          blurRadius: 5,
+                          offset: Offset(0, 3),
                         ),
-                      ),
-                      style: TextStyle(
-                        color: Colors.white,
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Пожалуйста, введите название урока';
-                        }
-                        return null;
-                      },
-                      onSaved: (value) {
-                        setState(() {
-                          _lessons[0] = value!;
-                        });
-                      },
+                      ],
                     ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 16),
-              if (_lessons.length > 1)
-                Column(
-                  children: List.generate(_lessons.length - 1, (index) {
-                    return Column(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '${index + 2}. ${_lessons[index + 1]}',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
+                        TextField(
+                          controller: _moduleNameController,
+                          decoration: InputDecoration(
+                            hintText: 'Название модуля',
+                            labelStyle: TextStyle(color: Colors.white),
+                            filled: true,
+                            fillColor: Colors.white,
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.white),
+                              borderRadius: BorderRadius.circular(8.0),
                             ),
-                            IconButton(
-                              icon: Icon(Icons.delete),
-                              color: Colors.red,
-                              onPressed: () {
-                                setState(() {
-                                  _lessons.removeAt(index + 1);
-                                });
-                              },
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.white),
+                              borderRadius: BorderRadius.circular(8.0),
                             ),
-                          ],
+                          ),
+                          style: TextStyle(color: Colors.black),
+                          onChanged: (value) {
+                            setState(() {
+                              _moduleName = value;
+                            });
+                          },
                         ),
                         SizedBox(height: 8),
+                        Text(
+                          '${widget.moduleIndex + 1}. Модуль',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.white,
+                          ),
+                        ),
                       ],
-                    );
-                  }),
-                ),
-              ElevatedButton(
-                  child: Text('Добавить урок'),
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Color(0xFFF48FB1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0),
                     ),
                   ),
-                  onPressed: () {
-                    setState(() {
-                      _lessons.add('');
-                    });
-                  }),
-              SizedBox(height: 16),
-              ElevatedButton(
-                  child: Text('Сохранить'),
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Color(0xFFF48FB1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                    ),
-                  ),
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      _formKey.currentState!.save();
-                      Navigator.pop(context, _lessons);
-                    }
-                  }),
-            ],
+                  SizedBox(height: 16),
+                ],
+              ),
+            ),
           ),
-        ),
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                return Column(
+                  children: [
+                    SizedBox(height: 4),
+                    Dismissible(
+                      key: Key(_lessons[index]),
+                      direction: DismissDirection.horizontal,
+                      background: Container(
+                        alignment: AlignmentDirectional.centerStart,
+                        padding: EdgeInsets.only(left: 16.0),
+                        color: Colors.white,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Icon(
+                              Icons.delete,
+                              color: Color(0xFFF48FB1),
+                              size: 24,
+                            ),
+                            SizedBox(width: MediaQuery.of(context).size.width - 120),
+
+                          ],
+                        ),
+                      ),
+                      onDismissed: (direction) {
+                        _reindexLessons(index);
+                      },
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16.0),
+                            child: Row(
+                              children: [
+                                Text('${_lessons[index].split('.').first}. '),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    _lessons[index].split('.').last,
+                                    textAlign: TextAlign.left,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: Color(0xFFF48FB1),
+                            shape: StadiumBorder(),
+                          ),
+
+                          onPressed: () {
+
+
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+              childCount: _lessons.length,
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: ElevatedButton(
+                child: Text('Добавить урок'),
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: Color(0xFFF48FB1),
+                  shape: StadiumBorder(),
+                  minimumSize: Size(double.infinity, 50),
+                ),
+                onPressed: () {
+                  setState(() {
+                    _lessons.add('${_lessons.length + 1}. Новый урок');
+                  });
+                },
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
