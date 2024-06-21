@@ -21,6 +21,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
 
   String _introduction = '';
   List<String> _lessons = [];
+  int _moduleIndex = 1;
 
   @override
   Widget build(BuildContext context) {
