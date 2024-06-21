@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'password_reset_screen.dart';
 
-
 class PasswordRecoveryScreen extends StatefulWidget {
   @override
   _PasswordRecoveryScreenState createState() => _PasswordRecoveryScreenState();
@@ -106,13 +105,8 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
                       ),
                     ),
                     onPressed: () {
-                        sendPasswordRecoveryRequest(emailController.text);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => PasswordResetScreen()),
-                      );
+                      sendPasswordRecoveryRequest(emailController.text);
                     },
-
                   ),
                 ),
               ],
