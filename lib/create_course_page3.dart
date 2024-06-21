@@ -38,6 +38,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
+                width: 400, // Фиксированная ширина контейнера
                 padding: EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
                   color: Color(0xFFF48FB1),
@@ -62,11 +63,29 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                         color: Colors.white,
                       ),
                     ),
+                    SizedBox(height: 16),
+                    Text(
+                      'О чем курс',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
                     SizedBox(height: 8),
                     Text(
                       widget.courseDescription,
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'Чему учит курс',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
@@ -74,7 +93,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                     Text(
                       widget.courseAbout,
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
                         color: Colors.white,
                       ),
                     ),
@@ -82,119 +101,137 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                 ),
               ),
               SizedBox(height: 16),
-              if (_introduction.isNotEmpty)
-                Dismissible(
-                  key: UniqueKey(),
-                  direction: DismissDirection.horizontal,
-
-                  onDismissed: (direction) {
-                    setState(() {
-                      _introduction = '';
-                    });
-                  },
-                  child: ElevatedButton(
-                    child: Text('$_moduleIndex. Модуль'),
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Color(0xFFF48FB1),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.zero,
-                      ),
-                      minimumSize: Size(double.infinity, 50),
-                    ),
-                    onPressed: () async {
-                      final List<String>? lessons = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => CreateLessonPage(
-                            courseName: widget.courseName,
-                            courseDescription: widget.courseDescription,
-                            courseAbout: widget.courseAbout,
-                            moduleIndex: _moduleIndex - 1,
-                            moduleName: _lessons[0],
-                          ),
-                        ),
-                      );
-                      if (lessons != null) {
-                        setState(() {
-                          _lessons[0] = lessons[0];
-                          _lessons.addAll(lessons.sublist(1));
-                        });
-                      }
-                    },
-                  ),
-                ),
-              ..._lessons.asMap().entries.map((entry) {
-                int index = entry.key + 1;
-                return Column(
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
                   children: [
-                    SizedBox(height: 4), // Reduced vertical spacing
-                    Dismissible(
-                      key: UniqueKey(),
-                      direction: DismissDirection.horizontal,
-                      background: Container(
-                        color: Colors.white,
-                        alignment: Alignment.centerLeft,
-                        padding: EdgeInsets.symmetric(horizontal: 20),
-                        child: Icon(
-                          Icons.delete,
-                          color: Color(0xFFF48FB1),
-                        ),
-                      ),
-                      onDismissed: (direction) {
-                        setState(() {
-                          _lessons.removeAt(index - 1);
-                        });
-                      },
-                      child: ElevatedButton(
-                        child: Text('$index. ${entry.value}'),
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: Color(0xFFF48FB1),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.zero,
+                    if (_introduction.isNotEmpty)
+                      Dismissible(
+                        key: UniqueKey(),
+                        direction: DismissDirection.horizontal,
+                        background: Container(
+                          color: Colors.white,
+                          alignment: Alignment.centerRight,
+                          padding: EdgeInsets.symmetric(horizontal: 20),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Icon(Icons.delete, color: Color(0xFFF48FB1)),
+                              SizedBox(width: MediaQuery.of(context).size.width - 120),
+                              Icon(Icons.delete, color: Color(0xFFF48FB1)),
+                            ],
                           ),
-                          minimumSize: Size(double.infinity, 50),
                         ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => CreateLessonPage(
-                                courseName: widget.courseName,
-                                courseDescription: widget.courseDescription,
-                                courseAbout: widget.courseAbout,
-                                moduleIndex: index - 1,
-                                moduleName: entry.value,
-                              ),
-                            ),
-                          ).then((value) {
-                            setState(() {
-                              _lessons[index - 1] = value[0];
-                              _introduction = '$index. ${value[0]}';
-                            });
+                        onDismissed: (direction) {
+                          setState(() {
+                            _introduction = '';
                           });
                         },
+                        child: ElevatedButton(
+                          child: Text('Модуль 1'),
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: Color(0xFFF48FB1),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.zero,
+                            ),
+                            minimumSize: Size(double.infinity, 50),
+                          ),
+                          onPressed: () async {
+                            final List<String>? lessons = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CreateLessonPage(
+                                  courseName: widget.courseName,
+                                  courseDescription: widget.courseDescription,
+                                  courseAbout: widget.courseAbout,
+                                  moduleIndex: 0,
+                                  moduleName: _lessons[0],
+                                ),
+                              ),
+                            );
+                            if (lessons != null) {
+                              setState(() {
+                                _lessons[0] = lessons[0];
+                                _lessons.addAll(lessons.sublist(1));
+                              });
+                            }
+                          },
+                        ),
                       ),
+                    ..._lessons.asMap().entries.map((entry) {
+                      int index = entry.key + 1;
+                      return Dismissible(
+                        key: UniqueKey(),
+                        direction: DismissDirection.horizontal,
+                        background: Container(
+                          color: Colors.white,
+                          alignment: Alignment.centerLeft,
+                          padding: EdgeInsets.symmetric(horizontal: 20),
+                          child: Icon(
+                            Icons.delete,
+                            color: Color(0xFFF48FB1),
+                          ),
+                        ),
+                        onDismissed: (direction) {
+                          setState(() {
+                            _lessons.removeAt(index - 1);
+                          });
+                        },
+                        child: Column(
+                          children: [
+                            ElevatedButton(
+                              child: Text('$index. ${entry.value}'),
+                              style: ElevatedButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                backgroundColor: Color(0xFFF48FB1),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.zero,
+                                ),
+                                minimumSize: Size(double.infinity, 50),
+                              ),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => CreateLessonPage(
+                                      courseName: widget.courseName,
+                                      courseDescription: widget.courseDescription,
+                                      courseAbout: widget.courseAbout,
+                                      moduleIndex: 0,
+                                      moduleName: _lessons[0],
+                                    ),
+                                  ),
+                                ).then((value) {
+                                  setState(() {
+                                    _lessons = value[1];
+                                    _introduction = 'Модуль $index: ${value[0]}';
+                                  });
+                                });
+                              },
+                            ),
+                            SizedBox(height: 8),
+                          ],
+                        ),
+                      );
+                    }),
+                    ElevatedButton(
+                      child: Text('Добавить модуль'),
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: Color(0xFFF48FB1),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                        ),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _lessons.add('Новый модуль');
+                        });
+                      },
                     ),
                   ],
-                );
-              }),
-              ElevatedButton(
-                child: Text('Добавить модуль'),
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: Color(0xFFF48FB1),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30.0),
-                  ),
                 ),
-                onPressed: () {
-                  setState(() {
-                    _lessons.add('Новый модуль');
-                    _moduleIndex++;
-                  });
-                },
               ),
             ],
           ),
