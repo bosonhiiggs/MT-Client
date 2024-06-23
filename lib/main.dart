@@ -1,11 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'custom_splash_screen.dart';
-import 'registration_screen.dart';
-import 'password_recovery_screen.dart';
+import 'package:http/http.dart' as http;
 import 'music_courses_screen.dart';
+import 'password_recovery_screen.dart';
+import 'registration_screen.dart';
 import 'package:appmetrica_plugin/appmetrica_plugin.dart';
-
-
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,7 +21,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.pink,
       ),
-      home: CustomSplashScreen(),
+      home: LoginScreen(),
     );
   }
 }
@@ -35,6 +34,55 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _loginController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  Future<void> _login() async {
+    String url = 'http://80.90.187.60:8001/api/auth/login/';
+
+    String username = _loginController.text.trim();
+    String password = _passwordController.text.trim();
+
+    // Создаем объект Map для отправки в теле запроса
+    Map<String, String> body = {
+      'username': username,
+      'password': password,
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        body: json.encode(body),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        // Успешный вход
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => MusicCoursesScreen()),
+        );
+      } else if (response.statusCode == 401) {
+        // Неправильный пароль или логин
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Неверный логин или пароль')),
+        );
+      } else {
+        // Обрабатываем другие статусы (например, показываем сообщение об ошибке сервера)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Произошла ошибка. Пожалуйста, попробуйте позже.')),
+        );
+      }
+    } catch (e) {
+      // Обрабатываем сетевые или серверные ошибки
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка сети: ${e.toString()}')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: TextFormField(
                   controller: _loginController,
                   decoration: InputDecoration(
-                    labelText: 'Логин',
+                    hintText: 'Логин',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(4.0),
                       borderSide: BorderSide.none,
@@ -83,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: TextFormField(
                   controller: _passwordController,
                   decoration: InputDecoration(
-                    labelText: 'Пароль',
+                    hintText: 'Пароль',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(4.0),
                       borderSide: BorderSide.none,
@@ -110,10 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: () {
                         AppMetrica.reportEvent('Авторизация');
                         if (_loginController.text.isNotEmpty && _passwordController.text.isNotEmpty) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => MusicCoursesScreen()),
-                          );
+                          _login();
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Введите логин и пароль')),
