@@ -1,4 +1,9 @@
+import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
 import 'music_courses_screen.dart';
 import 'my_courses_page.dart';
 import 'my_creations_screen.dart';
@@ -9,7 +14,147 @@ class EditUserPage extends StatefulWidget {
 }
 
 class _EditUserPageState extends State<EditUserPage> {
-  int _selectedIndex = 3; // начальный индекс вкладки профиля
+  int _selectedIndex = 3;
+  String username = '';
+  String firstName = '';
+  String lastName = '';
+  String email = '';
+  File? _image;
+
+  TextEditingController _firstNameController = TextEditingController();
+  TextEditingController _lastNameController = TextEditingController();
+  TextEditingController _usernameController = TextEditingController();
+  TextEditingController _emailController = TextEditingController();
+  TextEditingController _passwordController = TextEditingController();
+  TextEditingController _newPasswordController = TextEditingController();
+  TextEditingController _confirmPasswordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserData();
+  }
+
+  Future<void> _fetchUserData() async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? sessionid = prefs.getString('sessionid');
+      String? csrfToken = prefs.getString('csrftoken');
+
+      if (sessionid == null || csrfToken == null) {
+        throw Exception('Session ID или CSRF token отсутствуют');
+      }
+
+      final response = await http.get(
+        Uri.parse('http://80.90.187.60:8001/api/auth/aboutme/'),
+        headers: {
+          'Cookie': 'sessionid=$sessionid; csrftoken=$csrfToken',
+          'X-CSRFToken': csrfToken,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          username = data['username'];
+          firstName = data['first_name'];
+          lastName = data['last_name'];
+          email = data['email'];
+
+          _firstNameController.text = firstName;
+          _lastNameController.text = lastName;
+          _usernameController.text = username;
+          _emailController.text = email;
+        });
+      } else {
+        print('Не удалось загрузить данные пользователя. Код статуса: ${response.statusCode}');
+        print('Тело ответа: ${response.body}');
+        throw Exception('Не удалось загрузить данные пользователя');
+      }
+    } catch (e) {
+      print('Произошла ошибка: $e');
+      throw Exception('Не удалось загрузить данные пользователя');
+    }
+  }
+
+  Future<void> _updateUserData() async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? sessionid = prefs.getString('sessionid');
+      String? csrfToken = prefs.getString('csrftoken');
+
+      if (sessionid == null || csrfToken == null) {
+        throw Exception('Session ID или CSRF token отсутствуют');
+      }
+
+      Map<String, String> updatedData = {};
+      if (_firstNameController.text != firstName) {
+        updatedData['first_name'] = _firstNameController.text;
+      }
+      if (_lastNameController.text != lastName) {
+        updatedData['last_name'] = _lastNameController.text;
+      }
+      if (_emailController.text != email) {
+        updatedData['email'] = _emailController.text;
+      }
+
+      final response = await http.patch(
+        Uri.parse('http://80.90.187.60:8001/api/auth/update/'),
+        headers: {
+          'Cookie': 'sessionid=$sessionid; csrftoken=$csrfToken',
+          'X-CSRFToken': csrfToken,
+          'Content-Type': 'application/json',
+        },
+        body: json.encode(updatedData),
+      );
+
+      if (response.statusCode == 200) {
+        print('Данные пользователя успешно обновлены');
+      } else {
+        print('Не удалось обновить данные пользователя. Код статуса: ${response.statusCode}');
+        print('Тело ответа: ${response.body}');
+        throw Exception('Не удалось обновить данные пользователя');
+      }
+    } catch (e) {
+      print('Произошла ошибка: $e');
+      throw Exception('Не удалось обновить данные пользователя');
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _image = File(pickedFile.path);
+      });
+
+      // Загрузка изображения на сервер
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? sessionid = prefs.getString('sessionid');
+      String? csrfToken = prefs.getString('csrftoken');
+
+      if (sessionid == null || csrfToken == null) {
+        throw Exception('Session ID или CSRF token отсутствуют');
+      }
+
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('http://80.90.187.60:8001/api/auth/upload_photo/'),
+      );
+      request.headers['Cookie'] = 'sessionid=$sessionid; csrftoken=$csrfToken';
+      request.headers['X-CSRFToken'] = csrfToken;
+      request.files.add(await http.MultipartFile.fromPath('photo', _image!.path));
+
+      final response = await request.send();
+
+      if (response.statusCode == 200) {
+        print('Фотография успешно загружена');
+      } else {
+        print('Не удалось загрузить фотографию. Код статуса: ${response.statusCode}');
+        throw Exception('Не удалось загрузить фотографию');
+      }
+    }
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -51,20 +196,23 @@ class _EditUserPageState extends State<EditUserPage> {
               child: Stack(
                 children: [
                   CircleAvatar(
-                    radius: 60.0, // Увеличение радиуса фотографии
-                    backgroundImage: AssetImage('assets/icons/test1.png'),
+                    radius: 60,
+                    backgroundImage: _image == null
+                        ? AssetImage('assets/icons/test1.png')
+                        : FileImage(_image!) as ImageProvider,
                   ),
                   Positioned(
                     bottom: 0,
                     right: 0,
-                    child: CircleAvatar(
-                      radius: 15.0, // Уменьшение радиуса кнопки изменения
-                      backgroundColor: Color(0xFFF48FB1),
-                      child: IconButton(
-                        icon: Icon(Icons.edit, color: Colors.white, size: 15.0), // Уменьшение размера иконки
-                        onPressed: () {
-                          // Добавьте функционал для изменения фотографии профиля
-                        },
+                    child: GestureDetector(
+                      onTap: _pickImage,
+                      child: CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Color(0xFFF48FB1),
+                        child: Icon(
+                          Icons.edit,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
@@ -72,28 +220,35 @@ class _EditUserPageState extends State<EditUserPage> {
               ),
             ),
             SizedBox(height: 16.0),
-            buildTextField('Имя', false),
+            buildTextField('Имя', _firstNameController, false),
             SizedBox(height: 16.0),
-            buildTextField('Фамилия', false),
+            buildTextField('Фамилия', _lastNameController, false),
             SizedBox(height: 16.0),
-            buildTextField('Имя пользователя', false),
+            buildTextField('Имя пользователя', _usernameController, false),
             SizedBox(height: 16.0),
-            buildTextField('e-mail', false),
-            SizedBox(height: 16.0),
-            buildTextField('Пароль', true),
-            SizedBox(height: 16.0),
-            buildTextField('Новый пароль', true),
-            SizedBox(height: 16.0),
-            buildTextField('Повторите пароль', true),
+            buildTextField('e-mail', _emailController, false),
             SizedBox(height: 16.0),
             Center(
               child: Column(
                 children: [
                   ElevatedButton(
-                    onPressed: () {
-                      // Добавьте функционал для сохранения изменений
-                    },
+                    onPressed: _updateUserData,
                     child: Text('Сохранить изменения'),
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Color(0xFFF48FB1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30.0),
+                        side: BorderSide(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 8.0),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Добавьте функционал для смены пароля
+                    },
+                    child: Text('Сменить пароль'),
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.white,
                       backgroundColor: Color(0xFFF48FB1),
@@ -190,16 +345,17 @@ class _EditUserPageState extends State<EditUserPage> {
     );
   }
 
-  Widget buildTextField(String hintText, bool obscureText) {
+  Widget buildTextField(String hintText, TextEditingController controller, bool obscureText) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(4.0),
       ),
       child: TextField(
+        controller: controller,
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: TextStyle(color: Colors.black), // Цвет подсказки (розовый)
+          hintStyle: TextStyle(color: Colors.black),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(4.0),
             borderSide: BorderSide(color: Colors.black),
@@ -214,9 +370,8 @@ class _EditUserPageState extends State<EditUserPage> {
           ),
         ),
         obscureText: obscureText,
-        style: TextStyle(color: Colors.black), // Цвет текста (черный)
+        style: TextStyle(color: Colors.black),
       ),
     );
   }
-
 }
