@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'create_lessons_page2.dart';
 
 class CreateLessonPage extends StatefulWidget {
   final String courseName;
@@ -77,53 +78,34 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                         ),
                       ],
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        TextField(
-                          controller: _moduleNameController,
-                          decoration: InputDecoration(
-                            hintText: 'Название модуля',
-                            labelStyle: TextStyle(color: Colors.white),
-                            filled: true,
-                            fillColor: Colors.white,
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.white),
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.white),
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                          ),
-                          style: TextStyle(color: Colors.black),
-                          onChanged: (value) {
-                            setState(() {
-                              _moduleName = value;
-                            });
-                          },
+                    child: TextField(
+                      controller: _moduleNameController,
+                      decoration: InputDecoration(
+                        hintText: 'Название модуля',
+                        labelStyle: TextStyle(color: Colors.white),
+                        filled: true,
+                        fillColor: Colors.white,
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white),
+                          borderRadius: BorderRadius.circular(8.0),
                         ),
-                        SizedBox(height: 8),
-                        Text(
-                          '${widget.moduleIndex + 1}. Модуль',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.white,
-                          ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white),
+                          borderRadius: BorderRadius.circular(8.0),
                         ),
-                      ],
+                      ),
+                      style: TextStyle(color: Colors.black),
+                      onChanged: (value) {
+                        setState(() {
+                          _moduleName = value;
+                        });
+                      },
                     ),
                   ),
                   SizedBox(height: 16),
-                ],
-              ),
-            ),
-          ),
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                return Column(
-                  children: [
+                  Text('${widget.moduleIndex + 1}. Модуль'),
+                  SizedBox(height: 16),
+                  for (int index = 0; index < _lessons.length; index++) ... [
                     SizedBox(height: 4),
                     Dismissible(
                       key: Key(_lessons[index]),
@@ -141,7 +123,6 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                               size: 24,
                             ),
                             SizedBox(width: MediaQuery.of(context).size.width - 120),
-
                           ],
                         ),
                       ),
@@ -171,36 +152,56 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                             backgroundColor: Color(0xFFF48FB1),
                             shape: StadiumBorder(),
                           ),
+                          onPressed: () async {
+                            final lessonIndex = int.parse(_lessons[index].split('.').first);
+                            final lessonName = _lessons[index].split('.').last;
 
-                          onPressed: () {
+                            final updatedLessonData = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CreateLessonPage2(
+                                  courseName: widget.courseName,
+                                  courseDescription: widget.courseDescription,
+                                  courseAbout: widget.courseAbout,
+                                  moduleIndex: widget.moduleIndex,
+                                  moduleName: widget.moduleName,
+                                  lessonIndex: lessonIndex,
+                                  lessonName: lessonName,
+                                ),
+                              ),
+                            ) as LessonData?;
 
-
+                            if (updatedLessonData != null) {
+                              setState(() {
+                                _lessons[index] = '$lessonIndex. ${updatedLessonData.lessonName}';
+                                // Store the rest of the data in the state or a variable
+                                // For example:
+                                // _videoPath = updatedLessonData.videoPath;
+                                // _taskText = updatedLessonData.taskText;
+                                // ... and so on
+                              });
+                            }
                           },
                         ),
                       ),
                     ),
                   ],
-                );
-              },
-              childCount: _lessons.length,
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: ElevatedButton(
-                child: Text('Добавить урок'),
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: Color(0xFFF48FB1),
-                  shape: StadiumBorder(),
-                  minimumSize: Size(double.infinity, 50),
-                ),
-                onPressed: () {
-                  setState(() {
-                    _lessons.add('${_lessons.length + 1}. Новый урок');
-                  });
-                },
+                  SizedBox(height: 16),
+                  ElevatedButton(
+                    child: Text('Добавить урок'),
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Color(0xFFF48FB1),
+                      shape: StadiumBorder(),
+                      minimumSize: Size(double.infinity, 50),
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _lessons.add('${_lessons.length + 1}. Новый урок');
+                      });
+                    },
+                  ),
+                ],
               ),
             ),
           ),
