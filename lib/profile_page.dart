@@ -1,7 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'music_courses_screen.dart';
 import 'my_courses_page.dart';
 import 'my_creations_screen.dart';
+import 'edit_user.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -9,7 +13,53 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  int _selectedIndex = 3; // установите начальный индекс вкладки профиля
+  int _selectedIndex = 3; // Установите начальный индекс вкладки профиля
+  String _email = 'loading...';
+  String _fullName = 'loading...';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserData();
+  }
+
+  Future<void> _fetchUserData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? sessionId = prefs.getString('sessionid');
+
+    if (sessionId != null) {
+      try {
+        final response = await http.get(
+          Uri.parse('http://80.90.187.60:8001/api/auth/aboutme/'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Cookie': 'sessionid=$sessionId',
+          },
+        );
+
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          setState(() {
+            _email = data['email'] ?? 'user@email.auth';
+            _fullName = (data['first_name']?.isNotEmpty == true && data['last_name']?.isNotEmpty == true)
+                ? '${data['first_name']} ${data['last_name']}'
+                : 'Имя Фамилия';
+          });
+        } else {
+          // Обработка ошибок
+          setState(() {
+            _email = 'Не удалось загрузить данные';
+            _fullName = 'Не удалось загрузить данные';
+          });
+        }
+      } catch (e) {
+        setState(() {
+          _email = 'Ошибка: ${e.toString()}';
+          _fullName = 'Ошибка: ${e.toString()}';
+        });
+      }
+    }
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -19,7 +69,7 @@ class _ProfilePageState extends State<ProfilePage> {
           context,
           MaterialPageRoute(builder: (context) => MusicCoursesScreen()),
         );
-      }else if (index == 1) {
+      } else if (index == 1) {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => MyCoursesScreen()),
@@ -52,7 +102,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             SizedBox(height: 16.0),
             Text(
-              'Артемий Ражев',
+              _fullName,
               style: TextStyle(
                 fontSize: 24.0,
                 fontWeight: FontWeight.bold,
@@ -60,7 +110,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             SizedBox(height: 8.0),
             Text(
-              'razhev.2003@mail.ru',
+              _email,
               style: TextStyle(
                 fontSize: 18.0,
                 color: Colors.grey,
@@ -68,7 +118,12 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             SizedBox(height: 16.0),
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => EditUserPage()),
+                );
+              },
               child: Text('Редактировать профиль'),
               style: ElevatedButton.styleFrom(
                 foregroundColor: Colors.white,
@@ -78,43 +133,43 @@ class _ProfilePageState extends State<ProfilePage> {
                   side: BorderSide(color: Colors.white),
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),
-        bottomNavigationBar: BottomNavigationBar(
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: Icon(Icons.menu, color: Colors.white),
-              label: 'Каталог',
-              backgroundColor: Color(0xFFF48FB1),
-              activeIcon: Icon(Icons.menu, color: Colors.black),
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.favorite_border, color: Colors.white),
-              label: 'Мои курсы',
-              backgroundColor: Color(0xFFF48FB1),
-              activeIcon: Icon(Icons.favorite_border, color: Colors.black),
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.storage_outlined, color: Colors.white),
-              label: 'Преподавание',
-              backgroundColor: Color(0xFFF48FB1),
-              activeIcon: Icon(Icons.storage_outlined, color: Colors.black),
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person, color: Colors.white),
-              label: 'Мой профиль',
-              backgroundColor: Color(0xFFF48FB1),
-              activeIcon: Icon(Icons.person, color: Colors.black),
-            ),
-          ],
-          currentIndex: _selectedIndex,
-          selectedItemColor: Colors.black,
-          unselectedItemColor: Colors.white,
-          backgroundColor: Color(0xFFF48FB1),
-          onTap: _onItemTapped,
-        ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.menu, color: Colors.white),
+            label: 'Каталог',
+            backgroundColor: Color(0xFFF48FB1),
+            activeIcon: Icon(Icons.menu, color: Colors.black),
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite_border, color: Colors.white),
+            label: 'Мои курсы',
+            backgroundColor: Color(0xFFF48FB1),
+            activeIcon: Icon(Icons.favorite_border, color: Colors.black),
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.storage_outlined, color: Colors.white),
+            label: 'Преподавание',
+            backgroundColor: Color(0xFFF48FB1),
+            activeIcon: Icon(Icons.storage_outlined, color: Colors.black),
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person, color: Colors.white),
+            label: 'Мой профиль',
+            backgroundColor: Color(0xFFF48FB1),
+            activeIcon: Icon(Icons.person, color: Colors.black),
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.black,
+        unselectedItemColor: Colors.white,
+        backgroundColor: Color(0xFFF48FB1),
+        onTap: _onItemTapped,
+      ),
     );
   }
 }
