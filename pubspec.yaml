@@ -9,16 +9,27 @@ environment:
   sdk: '>=3.3.3 <4.0.0'
 
 dependencies:
+  image_picker: ^1.1.2
   flutter:
     sdk: flutter
+  file_picker: ^4.6.1
+
+  audio_manager: ^0.8.2
+
+  video_player: ^2.4.5
+
   flutter_native_splash: ^2.2.19
 
   shared_preferences: ^2.0.6
+
+
 
   firebase_auth: ^3.3.1
   cupertino_icons: ^1.0.6
   appmetrica_plugin: ^2.1.1  # Добавляем зависимость http
   http: ^1.2.1
+  cached_network_image: ^3.0.0
+
 
 dev_dependencies:
   flutter_test:
