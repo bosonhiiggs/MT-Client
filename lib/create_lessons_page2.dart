@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Card;
 import 'package:file_picker/file_picker.dart';
-import 'package:video_player/video_player.dart';
+import 'package:video_player/video_player.dart' show VideoPlayerController, VideoPlayer, VideoProgressIndicator;
 
 class LessonData {
   final String lessonName;
@@ -81,6 +81,18 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
     }
   }
 
+  LessonData _createLessonData() {
+    return LessonData(
+      lessonName: _lessonName,
+      videoPath: _videoPath,
+      taskText: _taskText,
+      testQuestion: _testQuestion,
+      correctAnswer: _correctAnswer,
+      wrongAnswer1: _wrongAnswer1,
+      wrongAnswer2: _wrongAnswer2,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     print('Video file path: ${videoFile?.path}');
@@ -158,6 +170,10 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
                     alignment: Alignment.center,
                     children: [
                       VideoPlayer(_controller!),
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: VideoProgressIndicator(_controller!, allowScrubbing: true),
+                      ),
                       IconButton(
                         icon: Icon(
                           _controller!.value.isPlaying
@@ -297,16 +313,10 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
                   shape: StadiumBorder(),
                 ),
                 onPressed: () {
-                  // Save data and navigate back to the previous page
-                  Navigator.pop(context, LessonData(
-                    lessonName: _lessonName,
-                    videoPath: _videoPath,
-                    taskText: _taskText,
-                    testQuestion: _testQuestion,
-                    correctAnswer: _correctAnswer,
-                    wrongAnswer1: _wrongAnswer1,
-                    wrongAnswer2: _wrongAnswer2,
-                  ));
+                  if (_formKey.currentState!.validate()) {
+                    _formKey.currentState!.save();
+                    Navigator.pop(context, _createLessonData());
+                  }
                 },
               ),
             ],
