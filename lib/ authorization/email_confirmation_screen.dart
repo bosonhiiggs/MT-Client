@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http; // Импортируйте пакет http
 import 'dart:convert'; // Для кодировки JSON
 import 'password_reset_screen.dart';
-import 'music_courses_screen.dart'; // Импортируйте экран курсов
+import '../main_pages/music_courses_page.dart'; // Импортируйте экран курсов
 
 class PasswordRecoveryConfirmationCodeScreen extends StatefulWidget {
   final String email;

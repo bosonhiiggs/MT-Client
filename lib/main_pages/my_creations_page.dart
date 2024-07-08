@@ -1,33 +1,34 @@
 import 'package:flutter/material.dart';
 import 'profile_page.dart';
-import 'music_courses_screen.dart';
-import 'my_creations_screen.dart';
+import 'music_courses_page.dart';
+import 'my_courses_page.dart';
+import '../Create_courses/create_course.dart';
 
-class MyCoursesScreen extends StatefulWidget {
+class MyCreationsScreen extends StatefulWidget {
   @override
-  _MyCoursesScreenState createState() => _MyCoursesScreenState();
+  _MyCreationsScreenState createState() => _MyCreationsScreenState();
 }
 
-class _MyCoursesScreenState extends State<MyCoursesScreen> {
-  int _selectedIndex = 1;
+class _MyCreationsScreenState extends State<MyCreationsScreen> {
+  int _selectedIndex = 2; // установите начальный индекс вкладки "Преподавание"
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
-      if (index == 3) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => ProfilePage()),
-        );
-      } else if (index == 0) {
+      if (index == 0) {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => MusicCoursesScreen()),
         );
-      } else if (index == 2) {
+      } else if (index == 1) {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => MyCreationsScreen()),
+          MaterialPageRoute(builder: (context) => MyCoursesScreen()),
+        );
+      }else if (index == 3) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => ProfilePage()),
         );
       }
     });
@@ -38,12 +39,43 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text('Мои курсы'),
+        title: Text('Мои творения'),
         centerTitle: true,
         backgroundColor: Color(0xFFF48FB1),
       ),
       body: Center(
-        child: Text('Страница моих курсов'),
+        child: Column(
+          children: <Widget>[
+            SizedBox(height: 16.0),
+            Text(
+              'Здесь будут храниться созданные вами курсы',
+              style: TextStyle(fontSize: 18),
+            ),
+            SizedBox(height: 16.0),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Spacer(),
+                ElevatedButton(
+                  child: Text('Создать курс'),
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Color(0xFFF48FB1),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30.0),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => CreateCoursePage()),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[

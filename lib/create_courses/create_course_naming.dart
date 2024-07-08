@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'create_course_page3.dart';
+import 'create_course_moduels.dart';
 
 class CreateCoursePage2 extends StatefulWidget {
   @override

@@ -1,28 +1,28 @@
 import 'package:flutter/material.dart';
 import 'profile_page.dart';
-import 'my_courses_page.dart';
-import 'my_creations_screen.dart';
+import 'music_courses_page.dart';
+import 'my_creations_page.dart';
 
-class MusicCoursesScreen extends StatefulWidget {
+class MyCoursesScreen extends StatefulWidget {
   @override
-  _MusicCoursesScreenState createState() => _MusicCoursesScreenState();
+  _MyCoursesScreenState createState() => _MyCoursesScreenState();
 }
 
-class _MusicCoursesScreenState extends State<MusicCoursesScreen> {
-  int _selectedIndex = 0;
+class _MyCoursesScreenState extends State<MyCoursesScreen> {
+  int _selectedIndex = 1;
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
-      if (index == 1) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => MyCoursesScreen()),
-        );
-      } else if (index == 3) {
+      if (index == 3) {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => ProfilePage()),
+        );
+      } else if (index == 0) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => MusicCoursesScreen()),
         );
       } else if (index == 2) {
         Navigator.push(
@@ -38,12 +38,12 @@ class _MusicCoursesScreenState extends State<MusicCoursesScreen> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text('Музыкальные курсы'),
+        title: Text('Мои курсы'),
         centerTitle: true,
         backgroundColor: Color(0xFFF48FB1),
       ),
       body: Center(
-        child: Text('Страница музыкальных курсов'),
+        child: Text('Страница моих курсов'),
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
