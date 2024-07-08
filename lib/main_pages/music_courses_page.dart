@@ -1,34 +1,33 @@
 import 'package:flutter/material.dart';
 import 'profile_page.dart';
-import 'music_courses_screen.dart';
 import 'my_courses_page.dart';
-import 'create_course_page.dart';
+import 'my_creations_page.dart';
 
-class MyCreationsScreen extends StatefulWidget {
+class MusicCoursesScreen extends StatefulWidget {
   @override
-  _MyCreationsScreenState createState() => _MyCreationsScreenState();
+  _MusicCoursesScreenState createState() => _MusicCoursesScreenState();
 }
 
-class _MyCreationsScreenState extends State<MyCreationsScreen> {
-  int _selectedIndex = 2; // установите начальный индекс вкладки "Преподавание"
+class _MusicCoursesScreenState extends State<MusicCoursesScreen> {
+  int _selectedIndex = 0;
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
-      if (index == 0) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => MusicCoursesScreen()),
-        );
-      } else if (index == 1) {
+      if (index == 1) {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => MyCoursesScreen()),
         );
-      }else if (index == 3) {
+      } else if (index == 3) {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => ProfilePage()),
+        );
+      } else if (index == 2) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => MyCreationsScreen()),
         );
       }
     });
@@ -39,43 +38,12 @@ class _MyCreationsScreenState extends State<MyCreationsScreen> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text('Мои творения'),
+        title: Text('Музыкальные курсы'),
         centerTitle: true,
         backgroundColor: Color(0xFFF48FB1),
       ),
       body: Center(
-        child: Column(
-          children: <Widget>[
-            SizedBox(height: 16.0),
-            Text(
-              'Здесь будут храниться созданные вами курсы',
-              style: TextStyle(fontSize: 18),
-            ),
-            SizedBox(height: 16.0),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Spacer(),
-                ElevatedButton(
-                  child: Text('Создать курс'),
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Color(0xFFF48FB1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                    ),
-                  ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => CreateCoursePage()),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
+        child: Text('Страница музыкальных курсов'),
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[

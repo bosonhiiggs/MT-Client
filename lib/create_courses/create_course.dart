@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'create_course_page2.dart';
+import 'create_course_naming.dart';
 import 'package:appmetrica_plugin/appmetrica_plugin.dart';
 
 

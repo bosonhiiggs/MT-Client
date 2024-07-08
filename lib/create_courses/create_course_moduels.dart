@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'create_lessons_page.dart';
+import 'create_lessons.dart';
 
 class CreateCoursePage3 extends StatefulWidget {
   final String courseName;

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'music_courses_screen.dart';
+import '../main_pages/music_courses_page.dart';
 import 'password_recovery_screen.dart';
 import 'registration_screen.dart';
 import 'package:appmetrica_plugin/appmetrica_plugin.dart';

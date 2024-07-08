@@ -1,12 +1,13 @@
 import 'dart:io';
 import 'dart:convert';
+import 'package:client/main_pages/profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
-import 'music_courses_screen.dart';
-import 'my_courses_page.dart';
-import 'my_creations_screen.dart';
+import '../main_pages/music_courses_page.dart';
+import '../main_pages/my_courses_page.dart';
+import '../main_pages/my_creations_page.dart';
 
 class EditUserPage extends StatefulWidget {
   @override
@@ -232,7 +233,13 @@ class _EditUserPageState extends State<EditUserPage> {
               child: Column(
                 children: [
                   ElevatedButton(
-                    onPressed: _updateUserData,
+                    onPressed: () {
+                      _updateUserData();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => ProfilePage()),
+                      );
+                    },
                     child: Text('Сохранить изменения'),
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.white,
