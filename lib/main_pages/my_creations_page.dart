@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'profile_page.dart';
 import 'music_courses_page.dart';
 import 'my_courses_page.dart';
-import '../Create_courses/create_course.dart';
+import '../create_courses/create_course.dart';
 
 class MyCreationsScreen extends StatefulWidget {
   @override
