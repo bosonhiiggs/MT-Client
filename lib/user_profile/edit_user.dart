@@ -1,13 +1,15 @@
-import 'dart:io';
 import 'dart:convert';
-import 'package:client/main_pages/profile_page.dart';
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image/image.dart' as img;
 import '../main_pages/music_courses_page.dart';
 import '../main_pages/my_courses_page.dart';
 import '../main_pages/my_creations_page.dart';
+import '../main_pages/profile_page.dart';
 
 class EditUserPage extends StatefulWidget {
   @override
@@ -20,6 +22,7 @@ class _EditUserPageState extends State<EditUserPage> {
   String firstName = '';
   String lastName = '';
   String email = '';
+  String avatarUrl = '';
   File? _image;
 
   TextEditingController _firstNameController = TextEditingController();
@@ -56,6 +59,13 @@ class _EditUserPageState extends State<EditUserPage> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+
+        // Обработка URL-адреса изображения
+        avatarUrl = data['avatar'];
+        if (avatarUrl.startsWith('http://80.90.187.60/media/')) {
+          avatarUrl = avatarUrl.replaceFirst('http://80.90.187.60/media/', 'http://80.90.187.60:8001/media/');
+        }
+
         setState(() {
           username = data['username'];
           firstName = data['first_name'];
@@ -78,6 +88,37 @@ class _EditUserPageState extends State<EditUserPage> {
     }
   }
 
+  Future<File> compressImage(File file, {int quality = 70}) async {
+    // Чтение изображения из файла
+    Uint8List bytes = await file.readAsBytes();
+    img.Image? image = img.decodeImage(bytes);
+
+    if (image != null) {
+      // Сжатие изображения
+      List<int> compressedBytes = img.encodeJpg(image, quality: quality);
+
+      // Создание нового файла сжатого изображения
+      File compressedFile = File(file.path.replaceAll('.jpg', '_compressed.jpg'))
+        ..writeAsBytesSync(compressedBytes);
+
+      return compressedFile;
+    }
+
+    return file;
+  }
+
+  Future<void> _pickImage() async {
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      File imageFile = File(pickedFile.path);
+
+      // Сжатие изображения перед отправкой
+      _image = await compressImage(imageFile);
+
+      setState(() {});
+    }
+  }
+
   Future<void> _updateUserData() async {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -88,72 +129,48 @@ class _EditUserPageState extends State<EditUserPage> {
         throw Exception('Session ID или CSRF token отсутствуют');
       }
 
-      Map<String, String> updatedData = {};
+      var request = http.MultipartRequest(
+        'PATCH',
+        Uri.parse('http://80.90.187.60:8001/api/auth/update/'),
+      );
+
+      request.headers['Cookie'] = 'sessionid=$sessionid; csrftoken=$csrfToken';
+      request.headers['X-CSRFToken'] = csrfToken;
+
+      // Добавляем обновленные данные
       if (_firstNameController.text != firstName) {
-        updatedData['first_name'] = _firstNameController.text;
+        request.fields['first_name'] = _firstNameController.text;
       }
       if (_lastNameController.text != lastName) {
-        updatedData['last_name'] = _lastNameController.text;
+        request.fields['last_name'] = _lastNameController.text;
       }
       if (_emailController.text != email) {
-        updatedData['email'] = _emailController.text;
+        request.fields['email'] = _emailController.text;
       }
 
-      final response = await http.patch(
-        Uri.parse('http://80.90.187.60:8001/api/auth/update/'),
-        headers: {
-          'Cookie': 'sessionid=$sessionid; csrftoken=$csrfToken',
-          'X-CSRFToken': csrfToken,
-          'Content-Type': 'application/json',
-        },
-        body: json.encode(updatedData),
-      );
+      // Добавляем изображение, если оно выбрано
+      if (_image != null) {
+        print('Файл для отправки: ${_image!.path}');
+        var avatarFile = await http.MultipartFile.fromPath('avatar', _image!.path);
+        print(avatarFile);
+        request.files.add(avatarFile);
+      }
+
+      final response = await request.send();
+
+      // Отладочная информация
+      print('Статус ответа: ${response.statusCode}');
+      final responseBody = await response.stream.bytesToString();
+      print('Тело ответа: $responseBody');
 
       if (response.statusCode == 200) {
         print('Данные пользователя успешно обновлены');
       } else {
         print('Не удалось обновить данные пользователя. Код статуса: ${response.statusCode}');
-        print('Тело ответа: ${response.body}');
-        throw Exception('Не удалось обновить данные пользователя');
       }
     } catch (e) {
       print('Произошла ошибка: $e');
       throw Exception('Не удалось обновить данные пользователя');
-    }
-  }
-
-  Future<void> _pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _image = File(pickedFile.path);
-      });
-
-      // Загрузка изображения на сервер
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? sessionid = prefs.getString('sessionid');
-      String? csrfToken = prefs.getString('csrftoken');
-
-      if (sessionid == null || csrfToken == null) {
-        throw Exception('Session ID или CSRF token отсутствуют');
-      }
-
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('http://80.90.187.60:8001/api/auth/upload_photo/'),
-      );
-      request.headers['Cookie'] = 'sessionid=$sessionid; csrftoken=$csrfToken';
-      request.headers['X-CSRFToken'] = csrfToken;
-      request.files.add(await http.MultipartFile.fromPath('photo', _image!.path));
-
-      final response = await request.send();
-
-      if (response.statusCode == 200) {
-        print('Фотография успешно загружена');
-      } else {
-        print('Не удалось загрузить фотографию. Код статуса: ${response.statusCode}');
-        throw Exception('Не удалось загрузить фотографию');
-      }
     }
   }
 
@@ -199,7 +216,7 @@ class _EditUserPageState extends State<EditUserPage> {
                   CircleAvatar(
                     radius: 60,
                     backgroundImage: _image == null
-                        ? AssetImage('assets/icons/test1.png')
+                        ? NetworkImage(avatarUrl) // Используем NetworkImage для URL
                         : FileImage(_image!) as ImageProvider,
                   ),
                   Positioned(
