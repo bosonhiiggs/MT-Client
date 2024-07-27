@@ -194,7 +194,7 @@ class _EditUserPageState extends State<EditUserPage> {
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Center(
               child: Stack(
@@ -232,10 +232,12 @@ class _EditUserPageState extends State<EditUserPage> {
             SizedBox(height: 16.0),
             buildTextField('e-mail', _emailController, false),
             SizedBox(height: 16.0),
-            Center(
-              child: Column(
-                children: [
-                  ElevatedButton(
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ButtonTheme(
+                  minWidth: double.infinity,
+                  child: ElevatedButton(
                     onPressed: () {
                       _updateUserData();
                       Navigator.push(
@@ -253,8 +255,11 @@ class _EditUserPageState extends State<EditUserPage> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 8.0),
-                  ElevatedButton(
+                ),
+                SizedBox(height: 8.0),
+                ButtonTheme(
+                  minWidth: double.infinity,
+                  child: ElevatedButton(
                     onPressed: () {
                       // Добавьте функционал для смены пароля
                     },
@@ -268,53 +273,8 @@ class _EditUserPageState extends State<EditUserPage> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 8.0),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Добавьте функционал для выхода из аккаунта
-                    },
-                    child: Text('Выйти из аккаунта'),
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Color(0xFFF48FB1),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30.0),
-                        side: BorderSide(color: Colors.white),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 8.0),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Добавьте функционал для перехода к информации о компании
-                    },
-                    child: Text('О нашей компании'),
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Color(0xFFF48FB1),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30.0),
-                        side: BorderSide(color: Colors.white),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 8.0),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Добавьте функционал для входа в режим модерации
-                    },
-                    child: Text('Вход в режим модерации'),
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Color(0xFFF48FB1),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30.0),
-                        side: BorderSide(color: Colors.white),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ],
         ),
