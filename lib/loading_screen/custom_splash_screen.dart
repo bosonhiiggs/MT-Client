@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../ authorization/main.dart';
+import '../main.dart';
 
 class CustomSplashScreen extends StatefulWidget {
   @override
