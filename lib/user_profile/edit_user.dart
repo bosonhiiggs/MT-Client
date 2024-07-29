@@ -1,13 +1,15 @@
-import 'dart:io';
 import 'dart:convert';
-import 'package:client/main_pages/profile_page.dart';
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image/image.dart' as img;
 import '../main_pages/music_courses_page.dart';
 import '../main_pages/my_courses_page.dart';
 import '../main_pages/my_creations_page.dart';
+import '../main_pages/profile_page.dart';
 
 class EditUserPage extends StatefulWidget {
   @override
@@ -20,15 +22,14 @@ class _EditUserPageState extends State<EditUserPage> {
   String firstName = '';
   String lastName = '';
   String email = '';
+  String avatarUrl = 'http://80.90.187.60:8001/media/users/users_default_avatar.jpg';
   File? _image;
 
   TextEditingController _firstNameController = TextEditingController();
   TextEditingController _lastNameController = TextEditingController();
   TextEditingController _usernameController = TextEditingController();
   TextEditingController _emailController = TextEditingController();
-  TextEditingController _passwordController = TextEditingController();
-  TextEditingController _newPasswordController = TextEditingController();
-  TextEditingController _confirmPasswordController = TextEditingController();
+
 
   @override
   void initState() {
@@ -55,11 +56,14 @@ class _EditUserPageState extends State<EditUserPage> {
       );
 
       if (response.statusCode == 200) {
+
         final rawData = utf8.decode(response.bodyBytes);
         print('Raw data: $rawData');
         final data = json.decode(rawData);
         print('Decoded data: $data');
+
         setState(() {
+          avatarUrl = data['avatar'];
           username = data['username'];
           firstName = data['first_name'];
           lastName = data['last_name'];
@@ -81,6 +85,29 @@ class _EditUserPageState extends State<EditUserPage> {
     }
   }
 
+  Future<File> compressImage(File file, {int quality = 70}) async {
+    Uint8List bytes = await file.readAsBytes();
+    img.Image? image = img.decodeImage(bytes);
+
+    if (image != null) {
+      List<int> compressedBytes = img.encodeJpg(image, quality: quality);
+      File compressedFile = File(file.path.replaceAll('.jpg', '_compressed.jpg'))
+        ..writeAsBytesSync(compressedBytes);
+      return compressedFile;
+    }
+
+    return file;
+  }
+
+  Future<void> _pickImage() async {
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      File imageFile = File(pickedFile.path);
+      _image = await compressImage(imageFile);
+      setState(() {});
+    }
+  }
+
   Future<void> _updateUserData() async {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -91,72 +118,46 @@ class _EditUserPageState extends State<EditUserPage> {
         throw Exception('Session ID или CSRF token отсутствуют');
       }
 
-      Map<String, String> updatedData = {};
-      if (_firstNameController.text != firstName) {
-        updatedData['first_name'] = _firstNameController.text;
-      }
-      if (_lastNameController.text != lastName) {
-        updatedData['last_name'] = _lastNameController.text;
-      }
-      if (_emailController.text != email) {
-        updatedData['email'] = _emailController.text;
-      }
-
-      final response = await http.patch(
+      var request = http.MultipartRequest(
+        'PATCH',
         Uri.parse('http://80.90.187.60:8001/api/auth/update/'),
-        headers: {
-          'Cookie': 'sessionid=$sessionid; csrftoken=$csrfToken',
-          'X-CSRFToken': csrfToken,
-          'Content-Type': 'application/json',
-        },
-        body: json.encode(updatedData),
       );
 
-      if (response.statusCode == 200) {
+      request.headers['Cookie'] = 'sessionid=$sessionid; csrftoken=$csrfToken';
+      request.headers['X-CSRFToken'] = csrfToken;
+
+      if (_firstNameController.text != firstName) {
+        request.fields['first_name'] = _firstNameController.text;
+      }
+      if (_lastNameController.text != lastName) {
+        request.fields['last_name'] = _lastNameController.text;
+      }
+      if (_emailController.text != email) {
+        request.fields['email'] = _emailController.text;
+      }
+
+      if (_image != null) {
+        var avatarFile = await http.MultipartFile.fromPath('avatar', _image!.path);
+        request.files.add(avatarFile);
+      }
+
+      final response = await request.send();
+      final responseBody = await response.stream.bytesToString();
+
+      if (response.statusCode == 201) {
+        setState(() {
+          imageCache.clear();
+          imageCache.clearLiveImages();
+          avatarUrl = 'новый URL изображения' + "?${DateTime.now().millisecondsSinceEpoch}";
+        });
         print('Данные пользователя успешно обновлены');
       } else {
         print('Не удалось обновить данные пользователя. Код статуса: ${response.statusCode}');
-        print('Тело ответа: ${response.body}');
-        throw Exception('Не удалось обновить данные пользователя');
+        print('Тело ответа: $responseBody');
       }
     } catch (e) {
       print('Произошла ошибка: $e');
       throw Exception('Не удалось обновить данные пользователя');
-    }
-  }
-
-  Future<void> _pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _image = File(pickedFile.path);
-      });
-
-      // Загрузка изображения на сервер
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? sessionid = prefs.getString('sessionid');
-      String? csrfToken = prefs.getString('csrftoken');
-
-      if (sessionid == null || csrfToken == null) {
-        throw Exception('Session ID или CSRF token отсутствуют');
-      }
-
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('http://80.90.187.60:8001/api/auth/upload_photo/'),
-      );
-      request.headers['Cookie'] = 'sessionid=$sessionid; csrftoken=$csrfToken';
-      request.headers['X-CSRFToken'] = csrfToken;
-      request.files.add(await http.MultipartFile.fromPath('photo', _image!.path));
-
-      final response = await request.send();
-
-      if (response.statusCode == 200) {
-        print('Фотография успешно загружена');
-      } else {
-        print('Не удалось загрузить фотографию. Код статуса: ${response.statusCode}');
-        throw Exception('Не удалось загрузить фотографию');
-      }
     }
   }
 
@@ -202,7 +203,7 @@ class _EditUserPageState extends State<EditUserPage> {
                   CircleAvatar(
                     radius: 60,
                     backgroundImage: _image == null
-                        ? AssetImage('assets/icons/test1.png')
+                        ? NetworkImage(avatarUrl)
                         : FileImage(_image!) as ImageProvider,
                   ),
                   Positioned(
