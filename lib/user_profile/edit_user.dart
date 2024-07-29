@@ -22,16 +22,14 @@ class _EditUserPageState extends State<EditUserPage> {
   String firstName = '';
   String lastName = '';
   String email = '';
-  String avatarUrl = '';
+  String avatarUrl = 'http://80.90.187.60:8001/media/users/users_default_avatar.jpg';
   File? _image;
 
   TextEditingController _firstNameController = TextEditingController();
   TextEditingController _lastNameController = TextEditingController();
   TextEditingController _usernameController = TextEditingController();
   TextEditingController _emailController = TextEditingController();
-  TextEditingController _passwordController = TextEditingController();
-  TextEditingController _newPasswordController = TextEditingController();
-  TextEditingController _confirmPasswordController = TextEditingController();
+
 
   @override
   void initState() {
@@ -60,13 +58,8 @@ class _EditUserPageState extends State<EditUserPage> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
 
-        // Обработка URL-адреса изображения
-        avatarUrl = data['avatar'];
-        if (avatarUrl.startsWith('http://80.90.187.60/media/')) {
-          avatarUrl = avatarUrl.replaceFirst('http://80.90.187.60/media/', 'http://80.90.187.60:8001/media/');
-        }
-
         setState(() {
+          avatarUrl = data['avatar'];
           username = data['username'];
           firstName = data['first_name'];
           lastName = data['last_name'];
@@ -89,18 +82,13 @@ class _EditUserPageState extends State<EditUserPage> {
   }
 
   Future<File> compressImage(File file, {int quality = 70}) async {
-    // Чтение изображения из файла
     Uint8List bytes = await file.readAsBytes();
     img.Image? image = img.decodeImage(bytes);
 
     if (image != null) {
-      // Сжатие изображения
       List<int> compressedBytes = img.encodeJpg(image, quality: quality);
-
-      // Создание нового файла сжатого изображения
       File compressedFile = File(file.path.replaceAll('.jpg', '_compressed.jpg'))
         ..writeAsBytesSync(compressedBytes);
-
       return compressedFile;
     }
 
@@ -111,10 +99,7 @@ class _EditUserPageState extends State<EditUserPage> {
     final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       File imageFile = File(pickedFile.path);
-
-      // Сжатие изображения перед отправкой
       _image = await compressImage(imageFile);
-
       setState(() {});
     }
   }
@@ -137,7 +122,6 @@ class _EditUserPageState extends State<EditUserPage> {
       request.headers['Cookie'] = 'sessionid=$sessionid; csrftoken=$csrfToken';
       request.headers['X-CSRFToken'] = csrfToken;
 
-      // Добавляем обновленные данные
       if (_firstNameController.text != firstName) {
         request.fields['first_name'] = _firstNameController.text;
       }
@@ -148,25 +132,24 @@ class _EditUserPageState extends State<EditUserPage> {
         request.fields['email'] = _emailController.text;
       }
 
-      // Добавляем изображение, если оно выбрано
       if (_image != null) {
-        print('Файл для отправки: ${_image!.path}');
         var avatarFile = await http.MultipartFile.fromPath('avatar', _image!.path);
-        print(avatarFile);
         request.files.add(avatarFile);
       }
 
       final response = await request.send();
-
-      // Отладочная информация
-      print('Статус ответа: ${response.statusCode}');
       final responseBody = await response.stream.bytesToString();
-      print('Тело ответа: $responseBody');
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201) {
+        setState(() {
+          imageCache.clear();
+          imageCache.clearLiveImages();
+          avatarUrl = 'новый URL изображения' + "?${DateTime.now().millisecondsSinceEpoch}";
+        });
         print('Данные пользователя успешно обновлены');
       } else {
         print('Не удалось обновить данные пользователя. Код статуса: ${response.statusCode}');
+        print('Тело ответа: $responseBody');
       }
     } catch (e) {
       print('Произошла ошибка: $e');
@@ -216,7 +199,7 @@ class _EditUserPageState extends State<EditUserPage> {
                   CircleAvatar(
                     radius: 60,
                     backgroundImage: _image == null
-                        ? NetworkImage(avatarUrl) // Используем NetworkImage для URL
+                        ? NetworkImage(avatarUrl)
                         : FileImage(_image!) as ImageProvider,
                   ),
                   Positioned(

@@ -7,6 +7,7 @@ import 'my_courses_page.dart';
 import 'my_creations_page.dart';
 import '../user_profile/edit_user.dart';
 import '../ authorization/main.dart'; // Импортируем экран входа
+// import './assets/icons/test2.png';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -17,7 +18,7 @@ class _ProfilePageState extends State<ProfilePage> {
   int _selectedIndex = 3; // Установите начальный индекс вкладки профиля
   String _email = 'loading...';
   String _fullName = 'loading...';
-  String _avatarUrl = 'http://example.com/default_avatar.jpg'; // Установите URL по умолчанию
+  String _avatarUrl = 'http://80.90.187.60:8001/media/users/users_default_avatar.jpg'; // Установите URL по умолчанию
 
   @override
   void initState() {
@@ -46,10 +47,11 @@ class _ProfilePageState extends State<ProfilePage> {
             _fullName = (data['first_name']?.isNotEmpty == true && data['last_name']?.isNotEmpty == true)
                 ? '${data['first_name']} ${data['last_name']}'
                 : 'Имя Фамилия';
-            _avatarUrl = data['avatar'] ?? 'http://example.com/default_avatar.jpg'; // Установите URL по умолчанию, если нет аватара
-            if (_avatarUrl.startsWith('http://80.90.187.60/media/')) {
-              _avatarUrl = _avatarUrl.replaceFirst('http://80.90.187.60/media/', 'http://80.90.187.60:8001/media/');
-            }
+            _avatarUrl = data['avatar']; // Установите URL по умолчанию, если нет аватара
+            // _avatarUrl = data['avatar'] ?? 'http://example.com/default_avatar.jpg'; // Установите URL по умолчанию, если нет аватара
+            // if (_avatarUrl.startsWith('http://80.90.187.60/media/')) {
+            //    _avatarUrl = _avatarUrl.replaceFirst('http://80.90.187.60/media/', 'http://80.90.187.60:8001/media/');
+            // }
           });
         } else {
           // Обработка ошибок
