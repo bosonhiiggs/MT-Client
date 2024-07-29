@@ -30,7 +30,6 @@ class _EditUserPageState extends State<EditUserPage> {
   TextEditingController _usernameController = TextEditingController();
   TextEditingController _emailController = TextEditingController();
 
-
   @override
   void initState() {
     super.initState();
@@ -56,7 +55,6 @@ class _EditUserPageState extends State<EditUserPage> {
       );
 
       if (response.statusCode == 200) {
-
         final rawData = utf8.decode(response.bodyBytes);
         print('Raw data: $rawData');
         final data = json.decode(rawData);
@@ -151,6 +149,14 @@ class _EditUserPageState extends State<EditUserPage> {
           avatarUrl = 'новый URL изображения' + "?${DateTime.now().millisecondsSinceEpoch}";
         });
         print('Данные пользователя успешно обновлены');
+      } else if (response.statusCode == 413) {
+        // Обработка ошибки 413
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Изображение слишком большое. Пожалуйста, выберите изображение меньшего размера.'),
+          ),
+        );
+        print('Изображение слишком большое. Код статуса: 413');
       } else {
         print('Не удалось обновить данные пользователя. Код статуса: ${response.statusCode}');
         print('Тело ответа: $responseBody');
