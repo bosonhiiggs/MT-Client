@@ -56,7 +56,11 @@ class _EditUserPageState extends State<EditUserPage> {
       );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+
+        final rawData = utf8.decode(response.bodyBytes);
+        print('Raw data: $rawData');
+        final data = json.decode(rawData);
+        print('Decoded data: $data');
 
         setState(() {
           avatarUrl = data['avatar'];

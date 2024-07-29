@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:client/%20authorization/main.dart'; // Подключите ваш основной файл приложения, если необходимо
+import 'package:client/main.dart'; // Подключите ваш основной файл приложения, если необходимо
 
 class PasswordResetScreen extends StatefulWidget {
   @override

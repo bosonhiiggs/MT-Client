@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../main.dart';
 import 'music_courses_page.dart';
 import 'my_courses_page.dart';
 import 'my_creations_page.dart';
 import '../user_profile/edit_user.dart';
-import '../ authorization/main.dart'; // Импортируем экран входа
-// import './assets/icons/test2.png';
+
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -35,13 +35,16 @@ class _ProfilePageState extends State<ProfilePage> {
         final response = await http.get(
           Uri.parse('http://80.90.187.60:8001/api/auth/aboutme/'),
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json; charset=UTF-8',
             'Cookie': 'sessionid=$sessionId',
           },
         );
 
         if (response.statusCode == 200) {
-          final data = json.decode(response.body);
+          final rawData = utf8.decode(response.bodyBytes); // на каждую страницу
+          print('Raw data: $rawData');
+          final data = json.decode(rawData);
+          print('Decoded data: $data');
           setState(() {
             _email = data['email'] ?? 'user@email.auth';
             _fullName = (data['first_name']?.isNotEmpty == true && data['last_name']?.isNotEmpty == true)
