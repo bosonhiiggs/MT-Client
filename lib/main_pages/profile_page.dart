@@ -18,6 +18,7 @@ class _ProfilePageState extends State<ProfilePage> {
   int _selectedIndex = 3;
   String _email = 'loading...';
   String _fullName = 'loading...';
+  String _avatarUrl = 'http://80.90.187.60:8001/media/users/users_default_avatar.jpg'; // Установите URL по умолчанию
 
   @override
   void initState() {
@@ -49,6 +50,11 @@ class _ProfilePageState extends State<ProfilePage> {
             _fullName = (data['first_name']?.isNotEmpty == true && data['last_name']?.isNotEmpty == true)
                 ? '${data['first_name']} ${data['last_name']}'
                 : 'Имя Фамилия';
+            _avatarUrl = data['avatar']; // Установите URL по умолчанию, если нет аватара
+            // _avatarUrl = data['avatar'] ?? 'http://example.com/default_avatar.jpg'; // Установите URL по умолчанию, если нет аватара
+            // if (_avatarUrl.startsWith('http://80.90.187.60/media/')) {
+            //    _avatarUrl = _avatarUrl.replaceFirst('http://80.90.187.60/media/', 'http://80.90.187.60:8001/media/');
+            // }
           });
         } else {
           // Обработка ошибок
@@ -80,12 +86,10 @@ class _ProfilePageState extends State<ProfilePage> {
             'Cookie': 'sessionid=$sessionId; csrftoken=$csrfToken',
           },
         );
-        print(response.statusCode);
 
         if (response.statusCode == 200) {
           await prefs.remove('sessionid');
           await prefs.remove('csrftoken');
-
 
           Navigator.pushAndRemoveUntil(
             context,
@@ -157,7 +161,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: <Widget>[
                   CircleAvatar(
                     radius: 50.0,
-                    backgroundImage: AssetImage('assets/icons/test1.png'),
+                    backgroundImage: NetworkImage(_avatarUrl), // Используем NetworkImage для загрузки из сети
                   ),
                   SizedBox(height: 16.0),
                   Text(

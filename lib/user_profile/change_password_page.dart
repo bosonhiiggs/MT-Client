@@ -12,6 +12,7 @@ class ChangePasswordPage extends StatefulWidget {
 class _ChangePasswordPageState extends State<ChangePasswordPage> {
   TextEditingController _newPasswordController = TextEditingController();
   TextEditingController _confirmPasswordController = TextEditingController();
+  String errorMessage = '';
 
   Future<void> _changePassword() async {
     try {
@@ -21,6 +22,13 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
       if (sessionid == null || csrfToken == null) {
         throw Exception('Session ID или CSRF token отсутствуют');
+      }
+
+      if (_newPasswordController.text != _confirmPasswordController.text) {
+        setState(() {
+          errorMessage = 'Пароли не совпадают';
+        });
+        return;
       }
 
       final response = await http.post(
@@ -42,6 +50,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           MaterialPageRoute(builder: (context) => ProfilePage()),
         );
       } else {
+        setState(() {
+          errorMessage = 'Не удалось изменить пароль';
+        });
         print('Не удалось изменить пароль. Код статуса: ${response.statusCode}');
         print('Тело ответа: ${response.body}');
         throw Exception('Не удалось изменить пароль');
@@ -83,14 +94,22 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               obscureText: true,
             ),
             SizedBox(height: 16.0),
-            ElevatedButton(
-              onPressed: _changePassword,
-              child: Text('Сохранить'),
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white,
-                backgroundColor: Color(0xFFF48FB1),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30.0),
+            if (errorMessage.isNotEmpty)
+              Text(
+                errorMessage,
+                style: TextStyle(color: Colors.red),
+              ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: ElevatedButton(
+                onPressed: _changePassword,
+                child: Text('Сохранить'),
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: Color(0xFFF48FB1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30.0),
+                  ),
                 ),
               ),
             ),
