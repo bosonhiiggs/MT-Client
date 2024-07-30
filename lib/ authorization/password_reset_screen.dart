@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:client/main.dart'; // Подключите ваш основной файл приложения, если необходимо
+import 'package:client/main.dart'; // Убедитесь, что путь к main.dart правильный
 
 class PasswordResetScreen extends StatefulWidget {
   @override
@@ -63,17 +63,17 @@ class _PasswordResetScreenState extends State<PasswordResetScreen> {
           print('Пароль успешно сброшен');
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => MyApp()),
+            MaterialPageRoute(builder: (context) => MyApp(isLoggedIn: false)),
           );
         } else {
           // Ошибка: показать сообщение об ошибке
           _showErrorSnackbar('Не удалось сбросить пароль. Пожалуйста, попробуйте снова.');
-          print('Не удалось сбросить пароль. Код ошибки: ${response.statusCode}');
+          print('Не удалось сбросить пароль. Код ошибки: \${response.statusCode}');
         }
       } catch (e) {
         // Ошибка запроса
         _showErrorSnackbar('Произошла ошибка при отправке запроса.');
-        print('Ошибка запроса: $e');
+        print('Ошибка запроса: \$e');
       }
     }
   }

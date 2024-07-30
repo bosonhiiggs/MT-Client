@@ -1,9 +1,10 @@
+import 'package:client/user_profile/verify_code_page.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
 import '../main_pages/music_courses_page.dart';
@@ -30,6 +31,7 @@ class _EditUserPageState extends State<EditUserPage> {
   TextEditingController _usernameController = TextEditingController();
   TextEditingController _emailController = TextEditingController();
 
+
   @override
   void initState() {
     super.initState();
@@ -55,6 +57,7 @@ class _EditUserPageState extends State<EditUserPage> {
       );
 
       if (response.statusCode == 200) {
+
         final rawData = utf8.decode(response.bodyBytes);
         print('Raw data: $rawData');
         final data = json.decode(rawData);
@@ -149,14 +152,6 @@ class _EditUserPageState extends State<EditUserPage> {
           avatarUrl = 'новый URL изображения' + "?${DateTime.now().millisecondsSinceEpoch}";
         });
         print('Данные пользователя успешно обновлены');
-      } else if (response.statusCode == 413) {
-        // Обработка ошибки 413
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Изображение слишком большое. Пожалуйста, выберите изображение меньшего размера.'),
-          ),
-        );
-        print('Изображение слишком большое. Код статуса: 413');
       } else {
         print('Не удалось обновить данные пользователя. Код статуса: ${response.statusCode}');
         print('Тело ответа: $responseBody');
@@ -258,7 +253,6 @@ class _EditUserPageState extends State<EditUserPage> {
                       backgroundColor: Color(0xFFF48FB1),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30.0),
-                        side: BorderSide(color: Colors.white),
                       ),
                     ),
                   ),
@@ -268,7 +262,10 @@ class _EditUserPageState extends State<EditUserPage> {
                   minWidth: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      // Добавьте функционал для смены пароля
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => VerifyCodePage()),
+                      );
                     },
                     child: Text('Сменить пароль'),
                     style: ElevatedButton.styleFrom(
@@ -276,7 +273,6 @@ class _EditUserPageState extends State<EditUserPage> {
                       backgroundColor: Color(0xFFF48FB1),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30.0),
-                        side: BorderSide(color: Colors.white),
                       ),
                     ),
                   ),

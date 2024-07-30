@@ -1,19 +1,27 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'main_pages/music_courses_page.dart';
+import 'package:appmetrica_plugin/appmetrica_plugin.dart';
+import 'package:http/http.dart' as http;
 import ' authorization/password_recovery_screen.dart';
 import ' authorization/registration_screen.dart';
-import 'package:appmetrica_plugin/appmetrica_plugin.dart';
+import 'main_pages/music_courses_page.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   AppMetrica.activate(AppMetricaConfig("06bffc38-8f82-4cba-96e6-1c6ae56a587e"));
-  runApp(MyApp());
+
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+
+  runApp(MyApp(isLoggedIn: isLoggedIn));
 }
 
 class MyApp extends StatelessWidget {
+  final bool isLoggedIn;
+
+  MyApp({required this.isLoggedIn});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -22,7 +30,48 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.pink,
       ),
-      home: LoginScreen(),
+      home: CustomSplashScreen(), // Запускаем загрузочную страницу
+    );
+  }
+}
+
+class CustomSplashScreen extends StatefulWidget {
+  @override
+  _CustomSplashScreenState createState() => _CustomSplashScreenState();
+}
+
+class _CustomSplashScreenState extends State<CustomSplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _navigateToLoginScreen();
+  }
+
+  Future<void> _navigateToLoginScreen() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+
+    await Future.delayed(Duration(seconds: 3)); // Имитация загрузки
+    if (isLoggedIn) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MusicCoursesScreen()),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginScreen()),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Color(0xFFF48FB1), // Установить цвет фона
+      child: Center(
+        child: Image.asset("assets/icons/ic2.png"), // Добавить изображение
+      ),
     );
   }
 }
@@ -38,7 +87,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     String url = 'http://80.90.187.60:8001/api/auth/login/';
-
     String username = _loginController.text.trim();
     String password = _passwordController.text.trim();
 
@@ -102,9 +150,10 @@ class _LoginScreenState extends State<LoginScreen> {
           SharedPreferences prefs = await SharedPreferences.getInstance();
           await prefs.setString('sessionid', sessionID);
           await prefs.setString('csrftoken', csrfToken);
+          await prefs.setBool('isLoggedIn', true); // Сохраняем состояние авторизации
 
           // Переходим на экран с курсами музыки или другой экран
-          Navigator.push(
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => MusicCoursesScreen()),
           );
