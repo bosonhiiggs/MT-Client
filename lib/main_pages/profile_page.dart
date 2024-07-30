@@ -15,7 +15,7 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  int _selectedIndex = 3; // Установите начальный индекс вкладки профиля
+  int _selectedIndex = 3;
   String _email = 'loading...';
   String _fullName = 'loading...';
 
@@ -189,7 +189,6 @@ class _ProfilePageState extends State<ProfilePage> {
                       backgroundColor: Color(0xFFF48FB1),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30.0),
-                        side: BorderSide(color: Colors.white),
                       ),
                     ),
                   ),
@@ -202,7 +201,6 @@ class _ProfilePageState extends State<ProfilePage> {
                       backgroundColor: Color(0xFFF48FB1),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30.0),
-                        side: BorderSide(color: Colors.white),
                       ),
                     ),
                   ),
@@ -215,7 +213,6 @@ class _ProfilePageState extends State<ProfilePage> {
                       backgroundColor: Color(0xFFF48FB1),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30.0),
-                        side: BorderSide(color: Colors.white),
                       ),
                     ),
                   ),
@@ -228,7 +225,6 @@ class _ProfilePageState extends State<ProfilePage> {
                       backgroundColor: Color(0xFFF48FB1),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30.0),
-                        side: BorderSide(color: Colors.white),
                       ),
                     ),
                   ),

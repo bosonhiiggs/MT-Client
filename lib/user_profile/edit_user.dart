@@ -1,13 +1,14 @@
-import 'dart:io';
-import 'dart:convert';
-import 'package:client/main_pages/profile_page.dart';
+import 'package:client/user_profile/verify_code_page.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import '../main_pages/music_courses_page.dart';
 import '../main_pages/my_courses_page.dart';
 import '../main_pages/my_creations_page.dart';
+import '../main_pages/profile_page.dart';
 
 class EditUserPage extends StatefulWidget {
   @override
@@ -251,7 +252,6 @@ class _EditUserPageState extends State<EditUserPage> {
                       backgroundColor: Color(0xFFF48FB1),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30.0),
-                        side: BorderSide(color: Colors.white),
                       ),
                     ),
                   ),
@@ -261,7 +261,10 @@ class _EditUserPageState extends State<EditUserPage> {
                   minWidth: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      // Добавьте функционал для смены пароля
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => VerifyCodePage()),
+                      );
                     },
                     child: Text('Сменить пароль'),
                     style: ElevatedButton.styleFrom(
@@ -269,7 +272,6 @@ class _EditUserPageState extends State<EditUserPage> {
                       backgroundColor: Color(0xFFF48FB1),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30.0),
-                        side: BorderSide(color: Colors.white),
                       ),
                     ),
                   ),

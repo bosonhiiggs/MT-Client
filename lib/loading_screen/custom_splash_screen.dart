@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
+import '../main_pages/music_courses_page.dart';
+
 
 class CustomSplashScreen extends StatefulWidget {
   @override
@@ -14,11 +17,21 @@ class _CustomSplashScreenState extends State<CustomSplashScreen> {
   }
 
   Future<void> _navigateToLoginScreen() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+
     await Future.delayed(Duration(seconds: 3)); // Имитация загрузки
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => LoginScreen()),
-    );
+    if (isLoggedIn) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MusicCoursesScreen()),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginScreen()),
+      );
+    }
   }
 
   @override
