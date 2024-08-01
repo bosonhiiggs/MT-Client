@@ -31,7 +31,6 @@ class _EditUserPageState extends State<EditUserPage> {
   TextEditingController _usernameController = TextEditingController();
   TextEditingController _emailController = TextEditingController();
 
-
   @override
   void initState() {
     super.initState();
@@ -57,7 +56,6 @@ class _EditUserPageState extends State<EditUserPage> {
       );
 
       if (response.statusCode == 200) {
-
         final rawData = utf8.decode(response.bodyBytes);
         print('Raw data: $rawData');
         final data = json.decode(rawData);
@@ -162,6 +160,41 @@ class _EditUserPageState extends State<EditUserPage> {
     }
   }
 
+  Future<void> _resetPassword() async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? sessionid = prefs.getString('sessionid');
+      String? csrfToken = prefs.getString('csrftoken');
+
+      if (sessionid == null || csrfToken == null) {
+        throw Exception('Session ID или CSRF token отсутствуют');
+      }
+
+      final response = await http.post(
+        Uri.parse('http://80.90.187.60:8001/api/auth/reset-request/'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': 'sessionid=$sessionid; csrftoken=$csrfToken',
+          'X-CSRFToken': csrfToken,
+        },
+        body: json.encode({'email': email}),
+      );
+
+      print('Код статуса запроса на смену пароля: ${response.statusCode}');
+
+      if (response.statusCode == 201) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => VerifyCodePage()),
+        );
+      } else {
+        print('Не удалось отправить запрос на смену пароля. Код статуса: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Произошла ошибка при отправке запроса на смену пароля: $e');
+    }
+  }
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -262,10 +295,7 @@ class _EditUserPageState extends State<EditUserPage> {
                   minWidth: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => VerifyCodePage()),
-                      );
+                      _resetPassword();
                     },
                     child: Text('Сменить пароль'),
                     style: ElevatedButton.styleFrom(
