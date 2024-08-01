@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'change_password_page.dart';
+import './/main.dart'; // Убедитесь, что путь правильный
 
 class VerifyCodePage extends StatefulWidget {
   @override
@@ -11,14 +11,18 @@ class VerifyCodePage extends StatefulWidget {
 
 class _VerifyCodePageState extends State<VerifyCodePage> {
   TextEditingController _codeController = TextEditingController();
+  TextEditingController _newPasswordController = TextEditingController();
+  TextEditingController _confirmPasswordController = TextEditingController();
+
   String email = '';
   String errorMessage = '';
 
   @override
   void initState() {
     super.initState();
-    _fetchUserEmail();
-    _sendVerificationCode();
+    _fetchUserEmail().then((_) {
+      _sendVerificationCode();
+    });
   }
 
   Future<void> _fetchUserEmail() async {
@@ -88,6 +92,13 @@ class _VerifyCodePageState extends State<VerifyCodePage> {
   }
 
   Future<void> _verifyCode() async {
+    if (_newPasswordController.text != _confirmPasswordController.text) {
+      setState(() {
+        errorMessage = 'Пароли не совпадают';
+      });
+      return;
+    }
+
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? sessionid = prefs.getString('sessionid');
@@ -98,23 +109,26 @@ class _VerifyCodePageState extends State<VerifyCodePage> {
       }
 
       final response = await http.post(
-        Uri.parse('http://80.90.187.60:8001/api/auth/verify_code/'),
+        Uri.parse('http://80.90.187.60:8001/api/auth/reset-confirm/'),
         headers: {
           'Cookie': 'sessionid=$sessionid; csrftoken=$csrfToken',
           'X-CSRFToken': csrfToken,
           'Content-Type': 'application/json',
         },
-        body: json.encode({'code': _codeController.text}),
+        body: json.encode({
+          'reset_code': _codeController.text,
+          'new_password': _newPasswordController.text,
+        }),
       );
 
-      if (response.statusCode == 200) {
-        Navigator.push(
+      if (response.statusCode == 201) {
+        Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => ChangePasswordPage()),
+          MaterialPageRoute(builder: (context) => LoginScreen()),
         );
       } else {
         setState(() {
-          errorMessage = 'Неправильный код';
+          errorMessage = 'Неправильный код или не удалось сбросить пароль';
         });
         print('Не удалось подтвердить код. Код статуса: ${response.statusCode}');
         print('Тело ответа: ${response.body}');
@@ -151,6 +165,24 @@ class _VerifyCodePageState extends State<VerifyCodePage> {
                 hintText: 'Введите код',
                 border: OutlineInputBorder(),
               ),
+            ),
+            SizedBox(height: 16.0),
+            TextField(
+              controller: _newPasswordController,
+              decoration: InputDecoration(
+                hintText: 'Новый пароль',
+                border: OutlineInputBorder(),
+              ),
+              obscureText: true,
+            ),
+            SizedBox(height: 16.0),
+            TextField(
+              controller: _confirmPasswordController,
+              decoration: InputDecoration(
+                hintText: 'Подтвердите новый пароль',
+                border: OutlineInputBorder(),
+              ),
+              obscureText: true,
             ),
             SizedBox(height: 16.0),
             if (errorMessage.isNotEmpty)
