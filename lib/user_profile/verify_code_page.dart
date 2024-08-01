@@ -122,6 +122,7 @@ class _VerifyCodePageState extends State<VerifyCodePage> {
       );
 
       if (response.statusCode == 201) {
+        await prefs.setBool('isLoggedIn', false);
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => LoginScreen()),

@@ -90,6 +90,8 @@ class _ProfilePageState extends State<ProfilePage> {
         if (response.statusCode == 200) {
           await prefs.remove('sessionid');
           await prefs.remove('csrftoken');
+          await prefs.setBool('isLoggedIn', false);
+
 
           Navigator.pushAndRemoveUntil(
             context,
