@@ -1,17 +1,19 @@
+import 'dart:io';
 import 'package:client/create_courses/create_course_naming.dart';
 import 'package:flutter/material.dart';
 import 'create_lessons.dart';
-
 
 class CreateCoursePage3 extends StatefulWidget {
   final String courseName;
   final String courseDescription;
   final String courseAbout;
+  final String? courseImagePath; // Добавьте путь к изображению курса
 
   CreateCoursePage3({
     required this.courseName,
     required this.courseDescription,
     required this.courseAbout,
+    this.courseImagePath,
   });
 
   @override
@@ -39,68 +41,98 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 400, // Фиксированная ширина контейнера
-                padding: EdgeInsets.all(16.0),
-                decoration: BoxDecoration(
-                  color: Color(0xFFF48FB1),
-                  borderRadius: BorderRadius.circular(8.0),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.5),
-                      spreadRadius: 2,
-                      blurRadius: 5,
-                      offset: Offset(0, 3),
+              Stack(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    height: 280, // Увеличиваем высоту контейнера
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF596B9),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.courseName,
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+                    child: widget.courseImagePath != null
+                        ? ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.file(
+                        File(widget.courseImagePath!),
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                        : Center(
+                      child: Icon(
+                        Icons.photo,
                         color: Colors.white,
+                        size: 80,
                       ),
                     ),
-                    SizedBox(height: 16),
-                    Text(
-                      'О чем курс',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                  ),
+                  Positioned.fill(
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Container(
+                        width: double.infinity,
+                        height: 200, // Уменьшаем высоту плашки
+                        margin: EdgeInsets.all(20), // Добавляем отступы от границ картинки
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.5), // Полупрозрачный фон
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: SingleChildScrollView(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.courseName,
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  'Чему учит курс',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  widget.courseDescription,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  'О курсе',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  widget.courseAbout,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                    SizedBox(height: 8),
-                    Text(
-                      widget.courseDescription,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      'Чему учит курс',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      widget.courseAbout,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
               SizedBox(height: 16),
               Padding(
