@@ -1,5 +1,7 @@
+import 'package:client/create_courses/create_course_naming.dart';
 import 'package:flutter/material.dart';
 import 'create_lessons.dart';
+
 
 class CreateCoursePage3 extends StatefulWidget {
   final String courseName;
@@ -215,20 +217,43 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                         ),
                       );
                     }),
-                    ElevatedButton(
-                      child: Text('Добавить модуль'),
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor: Color(0xFFF48FB1),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30.0),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        ElevatedButton(
+                          child: Text('Добавить модуль'),
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: Color(0xFFF48FB1),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30.0),
+                            ),
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _lessons.add('Новый модуль');
+                            });
+                          },
                         ),
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _lessons.add('Новый модуль');
-                        });
-                      },
+                        ElevatedButton(
+                          child: Text('Сохранить'),
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: Color(0xFFF48FB1),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30.0),
+                            ),
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CreateCoursePage2(),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ],
                 ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'create_lessons_filling.dart';
+import 'create_course_moduels.dart'; // Убедитесь, что импортируете правильный файл
 
 class CreateLessonPage extends StatefulWidget {
   final String courseName;
@@ -103,8 +104,6 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                     ),
                   ),
                   SizedBox(height: 16),
-                  Text('${widget.moduleIndex + 1}. Модуль'),
-                  SizedBox(height: 16),
                   for (int index = 0; index < _lessons.length; index++) ... [
                     SizedBox(height: 4),
                     Dismissible(
@@ -187,19 +186,49 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                     ),
                   ],
                   SizedBox(height: 16),
-                  ElevatedButton(
-                    child: Text('Добавить урок'),
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Color(0xFFF48FB1),
-                      shape: StadiumBorder(),
-                      minimumSize: Size(double.infinity, 50),
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _lessons.add('${_lessons.length + 1}. Новый урок');
-                      });
-                    },
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      ElevatedButton(
+                        child: Text('Добавить урок'),
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: Color(0xFFF48FB1),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30.0),
+                          ),
+                          minimumSize: Size(150, 50), // Adjusted size
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _lessons.add('${_lessons.length + 1}. Новый урок');
+                          });
+                        },
+                      ),
+                      ElevatedButton(
+                        child: Text('Сохранить'),
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: Color(0xFFF48FB1),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30.0),
+                          ),
+                          minimumSize: Size(150, 50), // Adjusted size
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CreateCoursePage3(
+                                courseName: widget.courseName,
+                                courseDescription: widget.courseDescription,
+                                courseAbout: widget.courseAbout,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),

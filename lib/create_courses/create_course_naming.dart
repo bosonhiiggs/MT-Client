@@ -1,8 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'create_course_moduels.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:http_parser/http_parser.dart';
+import 'create_course_moduels.dart';
 
 class CreateCoursePage2 extends StatefulWidget {
   @override
@@ -15,6 +18,20 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
   String _courseName = '';
   String _courseDescription = '';
   String _courseAbout = '';
+  File? _courseImage;
+
+  final ImagePicker _picker = ImagePicker();
+
+  // Функция для выбора изображения
+  Future<void> _pickImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _courseImage = File(pickedFile.path);
+      });
+    }
+  }
 
   // Функция для отправки данных на сервер
   Future<void> _sendCourseData() async {
@@ -29,22 +46,23 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
 
       final url = 'http://80.90.187.60:8001/api/mycreations/create/free/';
 
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Cookie': 'sessionid=$sessionid; csrftoken=$csrfToken',
-          'X-CSRFToken': csrfToken,
-        },
-        body: jsonEncode({
-          'title': _courseName,
-          'target_description': _courseDescription,
-          'description': _courseAbout,
-        }),
-      );
+      var request = http.MultipartRequest('POST', Uri.parse(url));
+      request.headers['Cookie'] = 'sessionid=$sessionid; csrftoken=$csrfToken';
+      request.headers['X-CSRFToken'] = csrfToken;
 
-      print('Status Code: ${response.statusCode}');
-      print('Response Body: ${response.body}');
+      request.fields['title'] = _courseName;
+      request.fields['target_description'] = _courseDescription;
+      request.fields['description'] = _courseAbout;
+
+      if (_courseImage != null) {
+        request.files.add(await http.MultipartFile.fromPath(
+          'image',
+          _courseImage!.path,
+          contentType: MediaType('image', 'jpeg'),
+        ));
+      }
+
+      var response = await request.send();
 
       if (response.statusCode == 201) {
         // Успешно создано
@@ -67,6 +85,9 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Ошибка создания курса. Попробуйте снова.')),
         );
+        // Выводим ответ от сервера для отладки
+        var responseBody = await response.stream.bytesToString();
+        print('Ответ от сервера: $responseBody');
       }
     } catch (e) {
       print('Произошла ошибка: $e');
@@ -84,68 +105,187 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
         centerTitle: true,
         backgroundColor: Color(0xFFF48FB1),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextFormField(
-                decoration: InputDecoration(
-                  labelText: 'Название курса',
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Stack(
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      height: 280, // Увеличиваем высоту контейнера
+                      decoration: BoxDecoration(
+                        color: Color(0xFFF596B9),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: _courseImage != null
+                          ? ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.file(
+                          _courseImage!,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                          : Center(
+                        child: Icon(
+                          Icons.photo,
+                          color: Colors.white,
+                          size: 80,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 5, // Уменьшаем расстояние сверху
+                      right: 10,
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.add_a_photo,
+                          color: Colors.white,
+                          size: 24, // Уменьшаем размер иконки
+                        ),
+                        onPressed: _pickImage,
+                      ),
+                    ),
+                    Positioned.fill(
+                      child: Align(
+                        alignment: Alignment.center,
+                        child: Container(
+                          width: double.infinity,
+                          height: 200, // Уменьшаем высоту плашки
+                          margin: EdgeInsets.all(20), // Добавляем отступы от границ картинки
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.5), // Полупрозрачный фон
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: SingleChildScrollView(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  TextFormField(
+                                    decoration: InputDecoration(
+                                      labelText: 'Название курса',
+                                      filled: true,
+                                      fillColor: Colors.transparent,
+                                      border: OutlineInputBorder(
+                                        borderSide: BorderSide.none,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    maxLines: 1, // Ограничиваем высоту поля ввода
+                                    validator: (value) {
+                                      if (value!.isEmpty) {
+                                        return 'Пожалуйста, введите название курса';
+                                      }
+                                      return null;
+                                    },
+                                    onSaved: (value) {
+                                      _courseName = value!;
+                                    },
+                                  ),
+                                  SizedBox(height: 10),
+                                  TextFormField(
+                                    decoration: InputDecoration(
+                                      labelText: 'Чему учит курс',
+                                      filled: true,
+                                      fillColor: Colors.transparent,
+                                      border: OutlineInputBorder(
+                                        borderSide: BorderSide.none,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    maxLines: 1, // Ограничиваем высоту поля ввода
+                                    validator: (value) {
+                                      if (value!.isEmpty) {
+                                        return 'Пожалуйста, введите описание чему учит курс';
+                                      }
+                                      return null;
+                                    },
+                                    onSaved: (value) {
+                                      _courseDescription = value!;
+                                    },
+                                  ),
+                                  SizedBox(height: 10),
+                                  TextFormField(
+                                    decoration: InputDecoration(
+                                      labelText: 'О курсе',
+                                      filled: true,
+                                      fillColor: Colors.transparent,
+                                      border: OutlineInputBorder(
+                                        borderSide: BorderSide.none,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    maxLines: 1, // Ограничиваем высоту поля ввода
+                                    validator: (value) {
+                                      if (value!.isEmpty) {
+                                        return 'Пожалуйста, введите описание курса';
+                                      }
+                                      return null;
+                                    },
+                                    onSaved: (value) {
+                                      _courseAbout = value!;
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                maxLines: null,
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Пожалуйста, введите название курса';
-                  }
-                  return null;
-                },
-                onSaved: (value) {
-                  _courseName = value!;
-                },
-              ),
-              TextFormField(
-                decoration: InputDecoration(
-                  labelText: 'Чему учит курс',
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    ElevatedButton(
+                      child: Text('Создать курс'),
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: Color(0xFFF48FB1),
+                        shape: StadiumBorder(),
+                      ),
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          _formKey.currentState!.save();
+                          _sendCourseData(); // Отправляем данные на сервер
+                        }
+                      },
+                    ),
+                    ElevatedButton(
+                      child: Text('Далее'),
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: Color(0xFFF48FB1),
+                        shape: StadiumBorder(),
+                      ),
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          _formKey.currentState!.save();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CreateCoursePage3(
+                                courseName: _courseName,
+                                courseDescription: _courseDescription,
+                                courseAbout: _courseAbout,
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                  ],
                 ),
-                maxLines: null,
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Пожалуйста, введите описание чему учит курс';
-                  }
-                  return null;
-                },
-                onSaved: (value) {
-                  _courseDescription = value!;
-                },
-              ),
-              TextFormField(
-                decoration: InputDecoration(
-                  labelText: 'О курсе',
-                ),
-                maxLines: null,
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Пожалуйста, введите описание курса';
-                  }
-                  return null;
-                },
-                onSaved: (value) {
-                  _courseAbout = value!;
-                },
-              ),
-              ElevatedButton(
-                child: Text('Создать курс'),
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    _formKey.currentState!.save();
-                    _sendCourseData(); // Отправляем данные на сервер
-                  }
-                },
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

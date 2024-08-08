@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import '../create_courses/create_course_naming.dart';
 import 'profile_page.dart';
 import 'music_courses_page.dart';
 import 'my_courses_page.dart';
 import '../create_courses/create_course.dart';
+import 'dart:io';
 
 class MyCreationsScreen extends StatefulWidget {
   @override
@@ -11,6 +13,7 @@ class MyCreationsScreen extends StatefulWidget {
 
 class _MyCreationsScreenState extends State<MyCreationsScreen> {
   int _selectedIndex = 2; // установите начальный индекс вкладки "Преподавание"
+  List<Map<String, dynamic>> _courses = [];
 
   void _onItemTapped(int index) {
     setState(() {
@@ -25,12 +28,23 @@ class _MyCreationsScreenState extends State<MyCreationsScreen> {
           context,
           MaterialPageRoute(builder: (context) => MyCoursesScreen()),
         );
-      }else if (index == 3) {
+      } else if (index == 3) {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => ProfilePage()),
         );
       }
+    });
+  }
+
+  void _addCourse(String courseName, String courseDescription, String courseAbout, File courseImage) {
+    setState(() {
+      _courses.add({
+        'name': courseName,
+        'description': courseDescription,
+        'about': courseAbout,
+        'image': courseImage,
+      });
     });
   }
 
@@ -47,10 +61,89 @@ class _MyCreationsScreenState extends State<MyCreationsScreen> {
         child: Column(
           children: <Widget>[
             SizedBox(height: 16.0),
-            Text(
-              'Здесь будут храниться созданные вами курсы',
-              style: TextStyle(fontSize: 18),
-            ),
+            if (_courses.isEmpty)
+              Text(
+                'Здесь будут храниться созданные вами курсы',
+                style: TextStyle(fontSize: 18),
+              ),
+            if (_courses.isNotEmpty)
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _courses.length,
+                  itemBuilder: (context, index) {
+                    final course = _courses[index];
+                    return Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Card(
+                        elevation: 4.0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Stack(
+                              children: [
+                                Container(
+                                  width: double.infinity,
+                                  height: 250, // Увеличиваем высоту контейнера
+                                  decoration: BoxDecoration(
+                                    color: Color(0xFFF596B9),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: Image.file(
+                                      course['image'],
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                                Positioned.fill(
+                                  child: Align(
+                                    alignment: Alignment.center,
+                                    child: Container(
+                                      width: double.infinity,
+                                      height: 200, // Уменьшаем высоту плашки
+                                      margin: EdgeInsets.all(20), // Добавляем отступы от границ картинки
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.5), // Полупрозрачный фон
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(16.0),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              course['name'],
+                                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                            ),
+                                            SizedBox(height: 10),
+                                            Text(
+                                              course['description'],
+                                              style: TextStyle(fontSize: 16),
+                                            ),
+                                            SizedBox(height: 10),
+                                            Text(
+                                              course['about'],
+                                              style: TextStyle(fontSize: 16),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
             SizedBox(height: 16.0),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -65,11 +158,14 @@ class _MyCreationsScreenState extends State<MyCreationsScreen> {
                       borderRadius: BorderRadius.circular(30.0),
                     ),
                   ),
-                  onPressed: () {
-                    Navigator.push(
+                  onPressed: () async {
+                    final result = await Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => CreateCoursePage()),
                     );
+                    if (result != null) {
+                      _addCourse(result['name'], result['description'], result['about'], result['image']);
+                    }
                   },
                 ),
               ],
