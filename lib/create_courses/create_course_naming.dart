@@ -20,6 +20,8 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
   String _courseAbout = '';
   File? _courseImage;
 
+  String? _courseSlug;  // Переменная для хранения slug
+
   final ImagePicker _picker = ImagePicker();
 
   // Функция для выбора изображения
@@ -64,10 +66,20 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
       print('Response Body: ${response.body}');
 
       if (response.statusCode == 201) {
+        final responseData = jsonDecode(response.body);
+        _courseSlug = responseData['slug'];  // Извлечение slug
+
+        // Сохранение slug в кэш
+        await prefs.setString('courseSlug', _courseSlug!);
+
+        // Вывод slug в терминал
+        print('Slug: $_courseSlug');
+
         // Успешно создано
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Курс успешно создан!')),
         );
+
         // Перейдите на следующую страницу, если это необходимо
         Navigator.push(
           context,
