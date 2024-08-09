@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:client/create_courses/create_course_naming.dart';
+import 'package:client/main_pages/my_creations_page.dart';
 import 'package:flutter/material.dart';
 import 'create_lessons.dart';
 
@@ -14,6 +15,7 @@ class CreateCoursePage3 extends StatefulWidget {
     required this.courseDescription,
     required this.courseAbout,
     this.courseImagePath,
+    required String coursePrice,
   });
 
   @override
@@ -280,7 +282,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => CreateCoursePage2(),
+                                builder: (context) => MyCreationsScreen(),
                               ),
                             );
                           },

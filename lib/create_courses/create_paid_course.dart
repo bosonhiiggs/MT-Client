@@ -7,17 +7,18 @@ import 'package:image_picker/image_picker.dart';
 import 'package:http_parser/http_parser.dart';
 import 'create_course_moduels.dart';
 
-class CreateCoursePage2 extends StatefulWidget {
+class PaidCoursePage extends StatefulWidget {
   @override
-  _CreateCoursePageState2 createState() => _CreateCoursePageState2();
+  _PaidCoursePage createState() => _PaidCoursePage();
 }
 
-class _CreateCoursePageState2 extends State<CreateCoursePage2> {
+class _PaidCoursePage extends State<PaidCoursePage> {
   final _formKey = GlobalKey<FormState>();
 
   String _courseName = '';
   String _courseDescription = '';
   String _courseAbout = '';
+  String _coursePrice = '';
   File? _courseImage;
 
   final ImagePicker _picker = ImagePicker();
@@ -53,6 +54,7 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
       request.fields['title'] = _courseName;
       request.fields['target_description'] = _courseDescription;
       request.fields['description'] = _courseAbout;
+      request.fields['price'] = _coursePrice;
 
       if (_courseImage != null) {
         request.files.add(await http.MultipartFile.fromPath(
@@ -77,7 +79,8 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
               courseName: _courseName,
               courseDescription: _courseDescription,
               courseAbout: _courseAbout,
-              courseImagePath: _courseImage?.path, coursePrice: '',
+              courseImagePath: _courseImage?.path,
+              coursePrice: _coursePrice,
             ),
           ),
         );
@@ -244,7 +247,43 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
                 ),
                 SizedBox(height: 20),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    SizedBox(
+                      width: 200, // Задаем фиксированную ширину для поля ввода цены
+                      child: TextFormField(
+                        decoration: InputDecoration(
+                          labelText: 'Цена курса',
+                          filled: true,
+                          fillColor: Colors.transparent,
+                          border: OutlineInputBorder(
+                            borderSide: BorderSide(color: Color(0xFFF48FB1), width: 2.0),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Color(0xFFF48FB1), width: 2.0),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Color(0xFFF48FB1), width: 2.0),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        maxLines: 1, // Ограничиваем высоту поля ввода
+                        validator: (value) {
+                          if (value!.isEmpty) {
+                            return 'Пожалуйста, введите цену курса';
+                          }
+                          return null;
+                        },
+                        onSaved: (value) {
+                          _coursePrice = value!;
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
+                Row(
                   children: [
                     ElevatedButton(
                       child: Text('Создать курс'),

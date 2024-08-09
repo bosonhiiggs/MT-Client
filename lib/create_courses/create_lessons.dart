@@ -222,7 +222,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                               builder: (context) => CreateCoursePage3(
                                 courseName: widget.courseName,
                                 courseDescription: widget.courseDescription,
-                                courseAbout: widget.courseAbout,
+                                courseAbout: widget.courseAbout, coursePrice: '',
                               ),
                             ),
                           );
