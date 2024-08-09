@@ -76,6 +76,7 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
               courseName: _courseName,
               courseDescription: _courseDescription,
               courseAbout: _courseAbout,
+              courseImagePath: _courseImage?.path,
             ),
           ),
         );
@@ -255,29 +256,6 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
                         if (_formKey.currentState!.validate()) {
                           _formKey.currentState!.save();
                           _sendCourseData(); // Отправляем данные на сервер
-                        }
-                      },
-                    ),
-                    ElevatedButton(
-                      child: Text('Далее'),
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor: Color(0xFFF48FB1),
-                        shape: StadiumBorder(),
-                      ),
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          _formKey.currentState!.save();
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => CreateCoursePage3(
-                                courseName: _courseName,
-                                courseDescription: _courseDescription,
-                                courseAbout: _courseAbout,
-                              ),
-                            ),
-                          );
                         }
                       },
                     ),
