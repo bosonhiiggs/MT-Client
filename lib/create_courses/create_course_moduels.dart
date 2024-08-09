@@ -1,13 +1,16 @@
 import 'dart:io';
-import 'package:client/create_courses/create_course_naming.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import 'create_lessons.dart';
+import 'create_course_naming.dart';
 
 class CreateCoursePage3 extends StatefulWidget {
   final String courseName;
   final String courseDescription;
   final String courseAbout;
-  final String? courseImagePath; // Добавьте путь к изображению курса
+  final String? courseImagePath;
 
   CreateCoursePage3({
     required this.courseName,
@@ -23,9 +26,68 @@ class CreateCoursePage3 extends StatefulWidget {
 class _CreateCoursePage3State extends State<CreateCoursePage3> {
   final _formKey = GlobalKey<FormState>();
 
+  String? _sessionId;
+  String? _csrfToken;
+  String? _courseSlug;
   String _introduction = '';
   List<String> _lessons = [];
   int _moduleIndex = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPreferences(); // Загружаем сессионный ID, токен и slug
+  }
+
+  Future<void> _loadPreferences() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _sessionId = prefs.getString('sessionid');
+      _csrfToken = prefs.getString('csrftoken');
+      _courseSlug = prefs.getString('courseSlug');
+    });
+  }
+
+  Future<void> _createModule(String moduleTitle) async {
+    if (_courseSlug == null) return;
+
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/$_courseSlug/modules/';
+    print('Отправляемый URL: $url');
+
+    // Подготавливаем данные в формате JSON-объекта
+    final msgJson = json.encode({
+      'title': moduleTitle,
+    });
+    print('Отправляемое тело: $msgJson');
+
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': 'sessionid=$_sessionId; csrftoken=$_csrfToken',
+        'X-CSRFToken': _csrfToken!,
+      },
+      body: msgJson,
+    );
+
+    // Декодируем ответ и обрабатываем ошибки
+    final rawData = utf8.decode(response.bodyBytes);
+    print('Raw data: $rawData');
+
+    try {
+      final data = json.decode(rawData);
+      print('Decoded data: $data');
+    } catch (e) {
+      print('Ошибка при декодировании JSON: $e');
+    }
+
+    if (response.statusCode == 200) {
+      print('Модуль успешно создан');
+    } else {
+      print('Ошибка при создании модуля: ${response.statusCode}');
+      print('Тело ответа: $rawData');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -265,6 +327,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                             setState(() {
                               _lessons.add('Новый модуль');
                             });
+                            _createModule('Новый модуль'); // Отправка запроса на сервер
                           },
                         ),
                         ElevatedButton(
