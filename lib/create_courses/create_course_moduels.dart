@@ -32,6 +32,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
   String _introduction = '';
   List<String> _lessons = [];
   int _moduleIndex = 1;
+  String? _moduleId;
 
   @override
   void initState() {
@@ -45,7 +46,13 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
       _sessionId = prefs.getString('sessionid');
       _csrfToken = prefs.getString('csrftoken');
       _courseSlug = prefs.getString('courseSlug');
+      _moduleId = prefs.getString('moduleId');
     });
+  }
+
+  Future<void> _saveModuleId(String moduleId) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('moduleId', moduleId);
   }
 
   Future<void> _createModule(String moduleTitle) async {
@@ -54,7 +61,6 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
     final url = 'http://80.90.187.60:8001/api/mycreations/create/$_courseSlug/modules/';
     print('Отправляемый URL: $url');
 
-    // Подготавливаем данные в формате JSON-объекта
     final msgJson = json.encode({
       'title': moduleTitle,
     });
@@ -70,21 +76,46 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
       body: msgJson,
     );
 
-    // Декодируем ответ и обрабатываем ошибки
     final rawData = utf8.decode(response.bodyBytes);
     print('Raw data: $rawData');
 
-    try {
-      final data = json.decode(rawData);
-      print('Decoded data: $data');
-    } catch (e) {
-      print('Ошибка при декодировании JSON: $e');
-    }
-
-    if (response.statusCode == 200) {
-      print('Модуль успешно создан');
+    if (response.statusCode == 201) {
+      try {
+        final data = json.decode(rawData);
+        print('Decoded data: $data');
+        _moduleId = data['id'].toString();
+        await _saveModuleId(_moduleId!);
+        print('Модуль успешно создан с ID: $_moduleId');
+      } catch (e) {
+        print('Ошибка при декодировании JSON: $e');
+      }
     } else {
       print('Ошибка при создании модуля: ${response.statusCode}');
+      print('Тело ответа: $rawData');
+    }
+  }
+
+  Future<void> _deleteModule(String _moduleId) async {
+    if (_courseSlug == null || _moduleId.isEmpty) return;
+
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/$_courseSlug/modules/$_moduleId';
+    print('Отправляемый URL для удаления: $url');
+
+    final response = await http.delete(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': 'sessionid=$_sessionId; csrftoken=$_csrfToken',
+        'X-CSRFToken': _csrfToken!,
+      },
+    );
+
+    final rawData = utf8.decode(response.bodyBytes);
+
+    if (response.statusCode == 204) {
+      print('Модуль успешно удален');
+    } else {
+      print('Ошибка при удалении модуля: ${response.statusCode}');
       print('Тело ответа: $rawData');
     }
   }
@@ -107,7 +138,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                 children: [
                   Container(
                     width: double.infinity,
-                    height: 280, // Увеличиваем высоту контейнера
+                    height: 280,
                     decoration: BoxDecoration(
                       color: Color(0xFFF596B9),
                       borderRadius: BorderRadius.circular(10),
@@ -133,10 +164,10 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                       alignment: Alignment.center,
                       child: Container(
                         width: double.infinity,
-                        height: 200, // Уменьшаем высоту плашки
-                        margin: EdgeInsets.all(20), // Добавляем отступы от границ картинки
+                        height: 200,
+                        margin: EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.5), // Полупрозрачный фон
+                          color: Colors.white.withOpacity(0.5),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: SingleChildScrollView(
@@ -218,7 +249,8 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                             ],
                           ),
                         ),
-                        onDismissed: (direction) {
+                        onDismissed: (direction) async {
+                          await _deleteModule(_moduleId!);
                           setState(() {
                             _introduction = '';
                           });
@@ -269,10 +301,14 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                             color: Color(0xFFF48FB1),
                           ),
                         ),
-                        onDismissed: (direction) {
-                          setState(() {
-                            _lessons.removeAt(index - 1);
-                          });
+                        onDismissed: (direction) async {
+                          final moduleIdToDelete = _moduleId;
+                          if (moduleIdToDelete != null) {
+                            await _deleteModule(moduleIdToDelete);
+                            setState(() {
+                              _lessons.removeAt(index - 1);
+                            });
+                          }
                         },
                         child: Column(
                           children: [
