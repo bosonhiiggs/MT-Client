@@ -1,21 +1,21 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 import 'create_lessons.dart';
 import 'create_course_naming.dart';
 
 class CreateCoursePage3 extends StatefulWidget {
-  final String courseName;
   final String courseDescription;
   final String courseAbout;
+  final String courseName; // Добавляем параметр для названия курса
   final String? courseImagePath;
 
   CreateCoursePage3({
-    required this.courseName,
     required this.courseDescription,
     required this.courseAbout,
+    required this.courseName, // Обновляем конструктор для включения названия курса
     this.courseImagePath,
   });
 
@@ -29,15 +29,14 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
   String? _sessionId;
   String? _csrfToken;
   String? _courseSlug;
-  String _introduction = '';
-  List<String> _lessons = [];
-  int _moduleIndex = 1;
-  String? _moduleId;
+  List<Map<String, dynamic>> _modules = [];
+  TextEditingController _moduleController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _loadPreferences(); // Загружаем сессионный ID, токен и slug
+    _loadPreferences();
+    _moduleController.text = 'Новый модуль'; // Устанавливаем начальный текст
   }
 
   Future<void> _loadPreferences() async {
@@ -46,8 +45,49 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
       _sessionId = prefs.getString('sessionid');
       _csrfToken = prefs.getString('csrftoken');
       _courseSlug = prefs.getString('courseSlug');
-      _moduleId = prefs.getString('moduleId');
     });
+
+    _fetchModules();
+  }
+
+  Future<void> _fetchModules() async {
+    if (_courseSlug == null) return;
+
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/$_courseSlug/modules/';
+    print('Отправляемый URL для получения модулей: $url');
+
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': 'sessionid=$_sessionId; csrftoken=$_csrfToken',
+        'X-CSRFToken': _csrfToken!,
+      },
+    );
+
+    final rawData = utf8.decode(response.bodyBytes);
+
+    if (response.statusCode == 200) {
+      try {
+        final data = json.decode(rawData);
+        List<dynamic> results = data['results'];
+        List<Map<String, dynamic>> modules = results.map((item) {
+          return {
+            'id': item['id'].toString(),
+            'title': item['title'],
+          };
+        }).toList();
+        setState(() {
+          _modules = modules;
+        });
+        print('Модули успешно загружены: $_modules');
+      } catch (e) {
+        print('Ошибка при декодировании JSON: $e');
+      }
+    } else {
+      print('Ошибка при получении модулей: ${response.statusCode}');
+      print('Тело ответа: $rawData');
+    }
   }
 
   Future<void> _saveModuleId(String moduleId) async {
@@ -59,7 +99,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
     if (_courseSlug == null) return;
 
     final url = 'http://80.90.187.60:8001/api/mycreations/create/$_courseSlug/modules/';
-    print('Отправляемый URL: $url');
+    print('Отправляемый URL для создания модуля: $url');
 
     final msgJson = json.encode({
       'title': moduleTitle,
@@ -83,9 +123,15 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
       try {
         final data = json.decode(rawData);
         print('Decoded data: $data');
-        _moduleId = data['id'].toString();
-        await _saveModuleId(_moduleId!);
-        print('Модуль успешно создан с ID: $_moduleId');
+        final newModuleId = data['id'].toString();
+        await _saveModuleId(newModuleId);
+
+        // Обновите список модулей, добавив новый модуль
+        setState(() {
+          _modules.add({'id': newModuleId, 'title': moduleTitle});
+        });
+
+        print('Модуль успешно создан с ID: $newModuleId');
       } catch (e) {
         print('Ошибка при декодировании JSON: $e');
       }
@@ -95,10 +141,10 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
     }
   }
 
-  Future<void> _deleteModule(String _moduleId) async {
-    if (_courseSlug == null || _moduleId.isEmpty) return;
+  Future<void> _deleteModule(String moduleId) async {
+    if (_courseSlug == null || moduleId.isEmpty) return;
 
-    final url = 'http://80.90.187.60:8001/api/mycreations/create/$_courseSlug/modules/$_moduleId';
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/$_courseSlug/modules/$moduleId';
     print('Отправляемый URL для удаления: $url');
 
     final response = await http.delete(
@@ -112,12 +158,29 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
 
     final rawData = utf8.decode(response.bodyBytes);
 
+    print('Статус код ответа: ${response.statusCode}');
+    print('Тело ответа: $rawData');
+
     if (response.statusCode == 204) {
+      setState(() {
+        _modules.removeWhere((module) => module['id'] == moduleId);
+      });
       print('Модуль успешно удален');
     } else {
       print('Ошибка при удалении модуля: ${response.statusCode}');
       print('Тело ответа: $rawData');
     }
+  }
+
+  void _onAddModulePressed() {
+    _createModule(_moduleController.text);
+    _moduleController.clear();
+    _moduleController.text = 'Новый модуль';
+  }
+
+  void _onSavePressed() {
+    // Реализуйте логику сохранения изменений здесь, если необходимо
+    print('Изменения сохранены');
   }
 
   @override
@@ -177,7 +240,16 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  widget.courseName,
+                                  widget.courseName, // Добавляем название курса
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  widget.courseDescription,
                                   style: TextStyle(
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
@@ -232,63 +304,9 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
-                    if (_introduction.isNotEmpty)
-                      Dismissible(
-                        key: UniqueKey(),
-                        direction: DismissDirection.horizontal,
-                        background: Container(
-                          color: Colors.white,
-                          alignment: Alignment.centerRight,
-                          padding: EdgeInsets.symmetric(horizontal: 20),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Icon(Icons.delete, color: Color(0xFFF48FB1)),
-                              SizedBox(width: MediaQuery.of(context).size.width - 120),
-                              Icon(Icons.delete, color: Color(0xFFF48FB1)),
-                            ],
-                          ),
-                        ),
-                        onDismissed: (direction) async {
-                          await _deleteModule(_moduleId!);
-                          setState(() {
-                            _introduction = '';
-                          });
-                        },
-                        child: ElevatedButton(
-                          child: Text('Модуль 1'),
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            backgroundColor: Color(0xFFF48FB1),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.zero,
-                            ),
-                            minimumSize: Size(double.infinity, 50),
-                          ),
-                          onPressed: () async {
-                            final List<String>? lessons = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => CreateLessonPage(
-                                  courseName: widget.courseName,
-                                  courseDescription: widget.courseDescription,
-                                  courseAbout: widget.courseAbout,
-                                  moduleIndex: 0,
-                                  moduleName: _lessons[0],
-                                ),
-                              ),
-                            );
-                            if (lessons != null) {
-                              setState(() {
-                                _lessons[0] = lessons[0];
-                                _lessons.addAll(lessons.sublist(1));
-                              });
-                            }
-                          },
-                        ),
-                      ),
-                    ..._lessons.asMap().entries.map((entry) {
+                    ..._modules.asMap().entries.map((entry) {
                       int index = entry.key + 1;
+                      final module = entry.value;
                       return Dismissible(
                         key: UniqueKey(),
                         direction: DismissDirection.horizontal,
@@ -302,20 +320,14 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                           ),
                         ),
                         onDismissed: (direction) async {
-                          final moduleIdToDelete = _moduleId;
-                          if (moduleIdToDelete != null) {
-                            await _deleteModule(moduleIdToDelete);
-                            setState(() {
-                              _lessons.removeAt(index - 1);
-                            });
-                          }
+                          print('Модуль для удаления: ${module['id']}');
+                          await _deleteModule(module['id']);
                         },
                         child: Column(
                           children: [
                             ElevatedButton(
-                              child: Text('$index. ${entry.value}'),
+                              child: Text('$index. ${module['title']}'),
                               style: ElevatedButton.styleFrom(
-                                foregroundColor: Colors.white,
                                 backgroundColor: Color(0xFFF48FB1),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.zero,
@@ -327,17 +339,20 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => CreateLessonPage(
-                                      courseName: widget.courseName,
+                                      courseSlug: _courseSlug!, // Передаем _courseSlug
                                       courseDescription: widget.courseDescription,
                                       courseAbout: widget.courseAbout,
-                                      moduleIndex: 0,
-                                      moduleName: _lessons[0],
+                                      moduleIndex: entry.key,
+                                      moduleName: module['title'],
+                                      moduleId: module['id'],
+
                                     ),
                                   ),
                                 ).then((value) {
                                   setState(() {
-                                    _lessons = value[1];
-                                    _introduction = 'Модуль $index: ${value[0]}';
+                                    if (value != null) {
+                                      _modules[entry.key]['title'] = value[0];
+                                    }
                                   });
                                 });
                               },
@@ -346,43 +361,37 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                           ],
                         ),
                       );
-                    }),
+                    }).toList(),
+                    SizedBox(height: 20),
+                    TextFormField(
+                      controller: _moduleController,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Название нового модуля',
+                      ),
+                      onFieldSubmitted: (value) {
+                        if (value.isNotEmpty) {
+                          _createModule(value);
+                        }
+                      },
+                    ),
+                    SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         ElevatedButton(
+                          onPressed: _onAddModulePressed,
                           child: Text('Добавить модуль'),
                           style: ElevatedButton.styleFrom(
-                            foregroundColor: Colors.white,
                             backgroundColor: Color(0xFFF48FB1),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30.0),
-                            ),
                           ),
-                          onPressed: () {
-                            setState(() {
-                              _lessons.add('Новый модуль');
-                            });
-                            _createModule('Новый модуль'); // Отправка запроса на сервер
-                          },
                         ),
                         ElevatedButton(
+                          onPressed: _onSavePressed,
                           child: Text('Сохранить'),
                           style: ElevatedButton.styleFrom(
-                            foregroundColor: Colors.white,
                             backgroundColor: Color(0xFFF48FB1),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30.0),
-                            ),
                           ),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => CreateCoursePage2(),
-                              ),
-                            );
-                          },
                         ),
                       ],
                     ),
