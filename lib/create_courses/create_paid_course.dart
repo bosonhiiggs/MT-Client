@@ -7,20 +7,19 @@ import 'package:image_picker/image_picker.dart';
 import 'package:http_parser/http_parser.dart';
 import 'create_course_moduels.dart';
 
-class CreateCoursePage2 extends StatefulWidget {
+class PaidCoursePage extends StatefulWidget {
   @override
-  _CreateCoursePageState2 createState() => _CreateCoursePageState2();
+  _PaidCoursePage createState() => _PaidCoursePage();
 }
 
-class _CreateCoursePageState2 extends State<CreateCoursePage2> {
+class _PaidCoursePage extends State<PaidCoursePage> {
   final _formKey = GlobalKey<FormState>();
 
   String _courseName = '';
   String _courseDescription = '';
   String _courseAbout = '';
+  String _coursePrice = '';
   File? _courseImage;
-
-  String? _courseSlug;  // Переменная для хранения slug
 
   final ImagePicker _picker = ImagePicker();
 
@@ -48,38 +47,30 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
 
       final url = 'http://80.90.187.60:8001/api/mycreations/create/free/';
 
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Cookie': 'sessionid=$sessionid; csrftoken=$csrfToken',
-          'X-CSRFToken': csrfToken,
-        },
-        body: jsonEncode({
-          'title': _courseName,
-          'target_description': _courseDescription,
-          'description': _courseAbout,
-        }),
-      );
+      var request = http.MultipartRequest('POST', Uri.parse(url));
+      request.headers['Cookie'] = 'sessionid=$sessionid; csrftoken=$csrfToken';
+      request.headers['X-CSRFToken'] = csrfToken;
 
-      print('Status Code: ${response.statusCode}');
-      print('Response Body: ${response.body}');
+      request.fields['title'] = _courseName;
+      request.fields['target_description'] = _courseDescription;
+      request.fields['description'] = _courseAbout;
+      request.fields['price'] = _coursePrice;
+
+      if (_courseImage != null) {
+        request.files.add(await http.MultipartFile.fromPath(
+          'image',
+          _courseImage!.path,
+          contentType: MediaType('image', 'jpeg'),
+        ));
+      }
+
+      var response = await request.send();
 
       if (response.statusCode == 201) {
-        final responseData = jsonDecode(response.body);
-        _courseSlug = responseData['slug'];  // Извлечение slug
-
-        // Сохранение slug в кэш
-        await prefs.setString('courseSlug', _courseSlug!);
-
-        // Вывод slug в терминал
-        print('Slug: $_courseSlug');
-
         // Успешно создано
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Курс успешно создан!')),
         );
-
         // Перейдите на следующую страницу, если это необходимо
         Navigator.push(
           context,
@@ -88,7 +79,8 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
               courseName: _courseName,
               courseDescription: _courseDescription,
               courseAbout: _courseAbout,
-              courseImagePath: _courseImage?.path, coursePrice: '',
+              courseImagePath: _courseImage?.path,
+              coursePrice: _coursePrice,
             ),
           ),
         );
@@ -97,6 +89,9 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Ошибка создания курса. Попробуйте снова.')),
         );
+        // Выводим ответ от сервера для отладки
+        var responseBody = await response.stream.bytesToString();
+        print('Ответ от сервера: $responseBody');
       }
     } catch (e) {
       print('Произошла ошибка: $e');
@@ -186,8 +181,7 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                     ),
-                                    keyboardType: TextInputType.multiline,
-                                    maxLines: null, // Поле расширяется по мере ввода текста
+                                    maxLines: 1, // Ограничиваем высоту поля ввода
                                     validator: (value) {
                                       if (value!.isEmpty) {
                                         return 'Пожалуйста, введите название курса';
@@ -209,8 +203,7 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                     ),
-                                    keyboardType: TextInputType.multiline,
-                                    maxLines: null, // Поле расширяется по мере ввода текста
+                                    maxLines: 1, // Ограничиваем высоту поля ввода
                                     validator: (value) {
                                       if (value!.isEmpty) {
                                         return 'Пожалуйста, введите описание чему учит курс';
@@ -232,8 +225,7 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                     ),
-                                    keyboardType: TextInputType.multiline,
-                                    maxLines: null, // Поле расширяется по мере ввода текста
+                                    maxLines: 1, // Ограничиваем высоту поля ввода
                                     validator: (value) {
                                       if (value!.isEmpty) {
                                         return 'Пожалуйста, введите описание курса';
@@ -255,7 +247,43 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
                 ),
                 SizedBox(height: 20),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    SizedBox(
+                      width: 200, // Задаем фиксированную ширину для поля ввода цены
+                      child: TextFormField(
+                        decoration: InputDecoration(
+                          labelText: 'Цена курса',
+                          filled: true,
+                          fillColor: Colors.transparent,
+                          border: OutlineInputBorder(
+                            borderSide: BorderSide(color: Color(0xFFF48FB1), width: 2.0),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Color(0xFFF48FB1), width: 2.0),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Color(0xFFF48FB1), width: 2.0),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        maxLines: 1, // Ограничиваем высоту поля ввода
+                        validator: (value) {
+                          if (value!.isEmpty) {
+                            return 'Пожалуйста, введите цену курса';
+                          }
+                          return null;
+                        },
+                        onSaved: (value) {
+                          _coursePrice = value!;
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
+                Row(
                   children: [
                     ElevatedButton(
                       child: Text('Создать курс'),

@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:client/create_courses/create_course_naming.dart';
+import 'package:client/main_pages/my_creations_page.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -17,6 +19,7 @@ class CreateCoursePage3 extends StatefulWidget {
     required this.courseAbout,
     required this.courseName, // Обновляем конструктор для включения названия курса
     this.courseImagePath,
+    required String coursePrice,
   });
 
   @override
