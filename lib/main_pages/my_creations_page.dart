@@ -7,6 +7,18 @@ import '../create_courses/create_course.dart';
 import 'dart:io';
 
 class MyCreationsScreen extends StatefulWidget {
+  final String? courseName;
+  final String? courseDescription;
+  final String? courseAbout;
+  final String? courseImagePath;
+
+  MyCreationsScreen({
+    this.courseName,
+    this.courseDescription,
+    this.courseAbout,
+    this.courseImagePath,
+  });
+
   @override
   _MyCreationsScreenState createState() => _MyCreationsScreenState();
 }
@@ -14,6 +26,14 @@ class MyCreationsScreen extends StatefulWidget {
 class _MyCreationsScreenState extends State<MyCreationsScreen> {
   int _selectedIndex = 2; // установите начальный индекс вкладки "Преподавание"
   List<Map<String, dynamic>> _courses = [];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.courseName != null && widget.courseDescription != null && widget.courseAbout != null) {
+      _addCourse(widget.courseName!, widget.courseDescription!, widget.courseAbout!, widget.courseImagePath);
+    }
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -37,13 +57,13 @@ class _MyCreationsScreenState extends State<MyCreationsScreen> {
     });
   }
 
-  void _addCourse(String courseName, String courseDescription, String courseAbout, File courseImage) {
+  void _addCourse(String courseName, String courseDescription, String courseAbout, String? courseImagePath) {
     setState(() {
       _courses.add({
         'name': courseName,
         'description': courseDescription,
         'about': courseAbout,
-        'image': courseImage,
+        'image': courseImagePath != null ? File(courseImagePath) : null,
       });
     });
   }
@@ -91,11 +111,19 @@ class _MyCreationsScreenState extends State<MyCreationsScreen> {
                                     color: Color(0xFFF596B9),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  child: ClipRRect(
+                                  child: course['image'] != null
+                                      ? ClipRRect(
                                     borderRadius: BorderRadius.circular(10),
                                     child: Image.file(
                                       course['image'],
                                       fit: BoxFit.cover,
+                                    ),
+                                  )
+                                      : Center(
+                                    child: Icon(
+                                      Icons.photo,
+                                      color: Colors.white,
+                                      size: 80,
                                     ),
                                   ),
                                 ),

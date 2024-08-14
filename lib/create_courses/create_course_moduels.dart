@@ -92,6 +92,66 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
     }
   }
 
+  Future<void> _addCourse(
+      String courseName,
+      String courseDescription,
+      String courseAbout,
+      String? courseImagePath,
+      ) async {
+    if (_sessionId == null || _csrfToken == null) return;
+
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/';
+    print('Отправляемый URL: $url');
+
+    // Подготавливаем данные в формате JSON-объекта
+    final msgJson = json.encode({
+      'name': courseName,
+      'description': courseDescription,
+      'about': courseAbout,
+      'image': courseImagePath,
+    });
+    print('Отправляемое тело: $msgJson');
+
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': 'sessionid=$_sessionId; csrftoken=$_csrfToken',
+        'X-CSRFToken': _csrfToken!,
+      },
+      body: msgJson,
+    );
+
+    // Декодируем ответ и обрабатываем ошибки
+    final rawData = utf8.decode(response.bodyBytes);
+    print('Raw data: $rawData');
+
+    try {
+      final data = json.decode(rawData);
+      print('Decoded data: $data');
+    } catch (e) {
+      print('Ошибка при декодировании JSON: $e');
+    }
+
+    if (response.statusCode == 200) {
+      print('Курс успешно создан');
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MyCreationsScreen(
+            courseName: courseName,
+            courseDescription: courseDescription,
+            courseAbout: courseAbout,
+            courseImagePath: courseImagePath,
+          ),
+        ),
+      );
+    } else {
+      print('Ошибка при создании курса: ${response.statusCode}');
+      print('Тело ответа: $rawData');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -343,11 +403,11 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                             ),
                           ),
                           onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => MyCreationsScreen(),
-                              ),
+                            _addCourse(
+                              widget.courseName,
+                              widget.courseDescription,
+                              widget.courseAbout,
+                              widget.courseImagePath,
                             );
                           },
                         ),
