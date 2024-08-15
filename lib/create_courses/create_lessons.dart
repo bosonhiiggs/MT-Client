@@ -273,6 +273,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                                     courseDescription: widget.courseDescription,
                                     courseAbout: widget.courseAbout,
                                     courseName: widget.moduleName,
+                                    coursePrice: ''
                                   ),
                                 ),
                               );
