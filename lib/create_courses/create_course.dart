@@ -1,3 +1,4 @@
+import 'package:client/create_courses/create_paid_course.dart';
 import 'package:flutter/material.dart';
 import 'create_course_naming.dart';
 import 'package:appmetrica_plugin/appmetrica_plugin.dart';
@@ -44,6 +45,10 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
               ),
               onPressed: () {
                 AppMetrica.reportEvent('Создание платного курса');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => PaidCoursePage()),
+                );
               },
             ),
             SizedBox(height: 16.0),
