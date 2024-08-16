@@ -48,25 +48,35 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
 
       final url = 'http://80.90.187.60:8001/api/mycreations/create/free/';
 
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Cookie': 'sessionid=$sessionid; csrftoken=$csrfToken',
-          'X-CSRFToken': csrfToken,
-        },
-        body: jsonEncode({
-          'title': _courseName,
-          'target_description': _courseDescription,
-          'description': _courseAbout,
-        }),
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse(url)
       );
 
+      request.headers['Cookie'] = 'sessionid=$sessionid; csrftoken=$csrfToken';
+      request.headers['X-CSRFToken'] = csrfToken;
+
+      request.fields['title'] = _courseName;
+      request.fields['target_description'] = _courseDescription;
+      request.fields['description'] = _courseAbout;
+
+
+
+      if (_courseImage != null) {
+        var logoFile = await http.MultipartFile.fromPath(
+            'logo', _courseImage!.path);
+        request.files.add(logoFile);
+      }
+
+
+
+      final response = await request.send();
+      final bodyResponse = await response.stream.bytesToString();
+
       print('Status Code: ${response.statusCode}');
-      print('Response Body: ${response.body}');
 
       if (response.statusCode == 201) {
-        final responseData = jsonDecode(response.body);
+        final responseData = jsonDecode(bodyResponse);
         _courseSlug = responseData['slug'];  // Извлечение slug
 
         // Сохранение slug в кэш
