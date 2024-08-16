@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+// Убедитесь, что этот импорт правильный
+import 'create_course_moduels.dart';
 
 class CreateLessonPage extends StatefulWidget {
   final String courseSlug;
@@ -10,6 +12,7 @@ class CreateLessonPage extends StatefulWidget {
   final int moduleIndex;
   final String moduleName;
   final String moduleId;
+  final String? courseImagePath; // Сделайте параметр необязательным
 
   CreateLessonPage({
     required this.courseSlug,
@@ -18,6 +21,7 @@ class CreateLessonPage extends StatefulWidget {
     required this.moduleIndex,
     required this.moduleName,
     required this.moduleId,
+    this.courseImagePath, // Добавьте этот параметр
   });
 
   @override
@@ -259,143 +263,95 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                     ),
                     SizedBox(height: 16),
                     ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         if (_moduleName.isNotEmpty) {
-                          _updateModuleTitle(_moduleName);
-                        } else {
-                          print('Название модуля не может быть пустым');
+                          await _updateModuleTitle(_moduleName);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CreateCoursePage3(
+                                courseDescription: widget.courseDescription,
+                                courseAbout: widget.courseAbout,
+                                courseName: _moduleName,
+                                courseImagePath: widget.courseImagePath,
+                                // Здесь можно изменить по необходимости
+                              ),
+                            ),
+                          );
                         }
                       },
                       child: Text('Сохранить изменения'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFFF48FB1), // Цвет кнопки сохранения
-                        minimumSize: Size(double.infinity, 50),
+                        backgroundColor: Color(0xFFF48FB1), // Цвет кнопки
+                        foregroundColor: Colors.white, // Цвет текста на кнопке
                       ),
                     ),
                   ],
                 ),
               ),
               SizedBox(height: 16),
-              Container(
-                padding: EdgeInsets.all(16.0),
-                decoration: BoxDecoration(
-                  color: Colors.white, // Цвет контейнера для уроков
-                  borderRadius: BorderRadius.circular(10.0),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.5),
-                      spreadRadius: 2,
-                      blurRadius: 5,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
+              Text(
+                'Уроки в модуле',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Уроки',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
+              ),
+              SizedBox(height: 16),
+              ListView.builder(
+                shrinkWrap: true,
+                itemCount: _lessons.length,
+                itemBuilder: (context, index) {
+                  final lesson = _lessons[index];
+                  return Dismissible(
+                    key: UniqueKey(),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      color: Color(0xFFF48FB1), // Цвет фона при свайпе
+                      alignment: Alignment.centerRight,
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      child: Icon(
+                        Icons.delete,
+                        color: Colors.white,
                       ),
                     ),
-                    SizedBox(height: 16),
-                    for (int index = 0; index < _lessons.length; index++) ...[
-                      SizedBox(height: 4),
-                      Dismissible(
-                        key: Key(_lessons[index]['id']!), // Unique Key based on lesson ID
-                        direction: DismissDirection.endToStart,
-                        background: Container(
-                          color: Colors.red,
-                          alignment: Alignment.centerRight,
-                          padding: EdgeInsets.symmetric(horizontal: 20),
-                          child: Icon(
-                            Icons.delete,
-                            color: Colors.white,
-                          ),
-                        ),
-                        onDismissed: (direction) async {
-                          final lessonId = _lessons[index]['id']!;
-                          final lessonTitle = _lessons[index]['title']!;
-                          final removedLesson = _lessons[index]; // Сохраняем удаленный элемент
-
-                          // Удаляем элемент из списка временно
-                          setState(() {
-                            _lessons.removeAt(index);
-                          });
-
-                          final success = await _deleteLesson(lessonId, index); // Выполняем запрос на удаление
-
-                          if (!success) {
-                            // Если запрос не удался, возвращаем элемент обратно
+                    onDismissed: (direction) async {
+                      final deleted = await _deleteLesson(lesson['id']!, index);
+                      if (deleted) {
+                        setState(() {
+                          _lessons.removeAt(index);
+                        });
+                      }
+                    },
+                    child: ListTile(
+                      title: Text(lesson['title'] ?? ''),
+                      trailing: IconButton(
+                        icon: Icon(Icons.delete),
+                        onPressed: () async {
+                          final deleted = await _deleteLesson(lesson['id']!, index);
+                          if (deleted) {
                             setState(() {
-                              _lessons.insert(index, removedLesson);
+                              _lessons.removeAt(index);
                             });
-
-                            // Показываем пользователю сообщение о неудачном удалении
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Не удалось удалить урок. Попробуйте еще раз.'),
-                                action: SnackBarAction(
-                                  label: 'ОК',
-                                  onPressed: () {
-                                    // Можно добавить действия по нажатию кнопки
-                                  },
-                                ),
-                              ),
-                            );
                           }
                         },
-                        child: ElevatedButton(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 16.0),
-                            child: Row(
-                              children: [
-                                Text('${index + 1}.'),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    _lessons[index]['title']!,
-                                    style: TextStyle(fontSize: 16),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFFF48FB1), // Цвет кнопки урока
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.zero,
-                            ),
-                            minimumSize: Size(double.infinity, 50),
-                          ),
-                          onPressed: () async {
-                            final updatedLessonName = await _showAddLessonDialog(context);
-                            if (updatedLessonName != null && updatedLessonName.isNotEmpty) {
-                              setState(() {
-                                _lessons[index]['title'] = updatedLessonName;
-                              });
-                            }
-                          },
-                        ),
-                      ),
-                    ],
-                    SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () async {
-                        final newLessonTitle = await _showAddLessonDialog(context);
-                        if (newLessonTitle != null && newLessonTitle.isNotEmpty) {
-                          await _createLesson(newLessonTitle);
-                        }
-                      },
-                      child: Text('Добавить урок'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFFF48FB1), // Цвет кнопки добавления урока
                       ),
                     ),
-                  ],
+                  );
+                },
+              ),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () async {
+                  final lessonTitle = await _showAddLessonDialog(context);
+                  if (lessonTitle != null && lessonTitle.isNotEmpty) {
+                    await _createLesson(lessonTitle);
+                  }
+                },
+                child: Text('Добавить урок'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFFF48FB1), // Цвет кнопки
+                  foregroundColor: Colors.white, // Цвет текста на кнопке
                 ),
               ),
             ],
