@@ -1,20 +1,25 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'create_lessons_filling.dart';
-import 'create_course_moduels.dart'; // Убедитесь, что импортируете правильный файл
+import 'create_course_moduels.dart';
 
 class CreateLessonPage extends StatefulWidget {
-  final String courseName;
+  final String courseSlug;
   final String courseDescription;
   final String courseAbout;
   final int moduleIndex;
   final String moduleName;
+  final String moduleId;
 
   CreateLessonPage({
-    required this.courseName,
+    required this.courseSlug,
     required this.courseDescription,
     required this.courseAbout,
     required this.moduleIndex,
     required this.moduleName,
+    required this.moduleId, required String courseName,
   });
 
   @override
@@ -26,12 +31,49 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
   late TextEditingController _moduleNameController;
   List<String> _lessons = [];
 
+  String? _sessionId;
+  String? _csrfToken;
+
   @override
   void initState() {
     super.initState();
     _moduleName = widget.moduleName;
     _moduleNameController = TextEditingController(text: _moduleName);
     _lessons.add('1. Новый урок');
+    _loadPreferences();  // Load CSRF and session ID
+  }
+
+  Future<void> _loadPreferences() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _sessionId = prefs.getString('sessionid');
+      _csrfToken = prefs.getString('csrftoken');
+    });
+  }
+
+  Future<bool> _updateModuleTitle(String newTitle) async {
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget.courseSlug}/modules/${widget.moduleId}';
+    final msgJson = json.encode({'title': newTitle});
+
+    final response = await http.patch(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': 'sessionid=$_sessionId; csrftoken=$_csrfToken',
+        'X-CSRFToken': _csrfToken!,
+      },
+      body: msgJson,
+    );
+
+    final rawData = utf8.decode(response.bodyBytes);
+    if (response.statusCode == 200) {
+      print('Название модуля успешно обновлено');
+      return true;
+    } else {
+      print('Ошибка при обновлении названия модуля: ${response.statusCode}');
+      print('Тело ответа: $rawData');
+      return false;
+    }
   }
 
   @override
@@ -101,6 +143,14 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                           _moduleName = value;
                         });
                       },
+                      onSubmitted: (value) {
+                        if (value.isNotEmpty) {
+                          print('Попытка обновления названия модуля: $value');
+                          _updateModuleTitle(value);
+                        } else {
+                          print('Название модуля не может быть пустым');
+                        }
+                      },
                     ),
                   ),
                   SizedBox(height: 16),
@@ -159,11 +209,12 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => CreateLessonPage2(
-                                  courseName: widget.courseName,
+                                  courseSlug: widget.courseSlug,
                                   courseDescription: widget.courseDescription,
                                   courseAbout: widget.courseAbout,
                                   moduleIndex: widget.moduleIndex,
                                   moduleName: widget.moduleName,
+                                  moduleId: widget.moduleId,
                                   lessonIndex: lessonIndex,
                                   lessonName: lessonName,
                                 ),
@@ -173,11 +224,6 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                             if (updatedLessonData != null) {
                               setState(() {
                                 _lessons[index] = '$lessonIndex. ${updatedLessonData.lessonName}';
-                                // Store the rest of the data in the state or a variable
-                                // For example:
-                                // _videoPath = updatedLessonData.videoPath;
-                                // _taskText = updatedLessonData.taskText;
-                                // ... and so on
                               });
                             }
                           },
@@ -197,7 +243,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30.0),
                           ),
-                          minimumSize: Size(150, 50), // Adjusted size
+                          minimumSize: Size(150, 50),
                         ),
                         onPressed: () {
                           setState(() {
@@ -213,19 +259,27 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30.0),
                           ),
-                          minimumSize: Size(150, 50), // Adjusted size
+                          minimumSize: Size(150, 50),
                         ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => CreateCoursePage3(
-                                courseName: widget.courseName,
-                                courseDescription: widget.courseDescription,
-                                courseAbout: widget.courseAbout, coursePrice: '',
-                              ),
-                            ),
-                          );
+                        onPressed: () async {
+                          print('ID модуля при сохранении: ${widget.moduleId}');
+                          if (_moduleName.isNotEmpty) {
+                            final success = await _updateModuleTitle(_moduleName);
+                            if (success) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => CreateCoursePage3(
+                                    courseDescription: widget.courseDescription,
+                                    courseAbout: widget.courseAbout,
+                                    courseName: widget.moduleName, coursePrice: '',
+                                  ),
+                                ),
+                              );
+                            } else {
+                              print('Ошибка при сохранении изменений.');
+                            }
+                          }
                         },
                       ),
                     ],

@@ -24,22 +24,24 @@ class LessonData {
 }
 
 class CreateLessonPage2 extends StatefulWidget {
-  final String courseName;
+  final String courseSlug; // Заменили courseName на courseSlug
   final String courseDescription;
   final String courseAbout;
   final int moduleIndex;
   final String moduleName;
   final int lessonIndex;
+  final String moduleId; // Проверьте, что moduleId добавлен здесь
   final String lessonName;
 
   CreateLessonPage2({
-    required this.courseName,
+    required this.courseSlug, // Изменение здесь
     required this.courseDescription,
     required this.courseAbout,
     required this.moduleIndex,
     required this.moduleName,
     required this.lessonIndex,
     required this.lessonName,
+    required this.moduleId, // Инициализация нового параметра
   });
 
   @override
