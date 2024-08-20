@@ -217,8 +217,39 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                         color: Color(0xFFF596B9),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: widget.courseImagePath != null
+                      // child: widget.courseImagePath != null
+                      //     ? ClipRRect(
+                      //   borderRadius: BorderRadius.circular(10),
+                      //   child: Image.network(
+                      //     widget.courseImagePath!,
+                      //     fit: BoxFit.cover,
+                      //   ),
+                      // )
+                      //     : Center(
+                      //   child: Icon(
+                      //     Icons.photo,
+                      //     color: Colors.white,
+                      //     size: 80,
+                      //   ),
+                      // ),
+                      child: widget.courseImagePath != null && widget.courseImagePath!.isNotEmpty
+                          ? widget.courseImagePath!.startsWith('http')
                           ? ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.network(
+                          widget.courseImagePath!,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                          : widget.courseImagePath!.startsWith('data:image')
+                          ? ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.memory(
+                          base64Decode(widget.courseImagePath!.split(',').last),
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                          : ClipRRect(
                         borderRadius: BorderRadius.circular(10),
                         child: Image.file(
                           File(widget.courseImagePath!),
@@ -227,7 +258,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                       )
                           : Center(
                         child: Icon(
-                          Icons.photo,
+                          Icons.photo,  // Иконка-заполнитель, если логотипа нет
                           color: Colors.white,
                           size: 80,
                         ),
