@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../main_pages/my_creations_page.dart';
 import 'create_lessons.dart';
 
 class CreateCoursePage3 extends StatefulWidget {
@@ -190,6 +191,12 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
   void _onSavePressed() {
     // Implement save logic here if needed
     print('Changes saved');
+
+    // Navigate to MyCreationsScreen
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => MyCreationsScreen()),
+    );
   }
 
   @override
