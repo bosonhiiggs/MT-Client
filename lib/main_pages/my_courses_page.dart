@@ -110,7 +110,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
           final rawData = utf8.decode(response.bodyBytes);
           final data = json.decode(rawData);
           print(data);
-          final List<dynamic> results = data['results'];
+          final List<dynamic> results = data;
           return results.map((json) => Course.fromJson(json)).toList();
         } else {
           throw Exception('Failed to load courses');

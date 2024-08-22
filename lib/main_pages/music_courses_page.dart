@@ -117,6 +117,52 @@ class _MusicCoursesScreenState extends State<MusicCoursesScreen> {
     }
   }
 
+  Future<void> _purchaseCourse(Course course) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? sessionId = prefs.getString('sessionid');
+    String? csrfToken = prefs.getString('csrftoken');
+
+    print(sessionId);
+    print(csrfToken);
+
+    if (sessionId == null || csrfToken == null ) {
+      print('SessionID или CSRF токен отсутсвуют');
+      return;
+    }
+
+    final url = 'http://80.90.187.60:8001/api/catalog/${course.slug}/';
+
+    try {
+
+      final response = await http.post(
+        Uri.parse(url),
+        // headers: {
+        //   'Content-Type': 'application/json; charset=UTF-8',
+        //   'Cookie': 'sessionid=$sessionId',
+        //   'X-CSRFToken': csrfToken,
+        // },
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': 'sessionid=$sessionId; csrftoken=$csrfToken',
+          'X-CSRFToken': csrfToken,
+        },
+        body: json.encode({}),
+      );
+
+      print(response.headers['Cookie']);
+
+      if (response.statusCode == 200) {
+        print('Курс успешно приобретен');
+      } else {
+        print('Ошибка при покупке курса: ${response.statusCode}');
+      }
+
+    } catch (e) {
+      print('Ошибка: $e');
+    }
+
+    }
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -211,8 +257,18 @@ class _MusicCoursesScreenState extends State<MusicCoursesScreen> {
                             Align(
                               alignment: Alignment.centerRight,
                               child: ElevatedButton(
-                                onPressed: () {
+                                onPressed: () async {
+                                  await _purchaseCourse(course);
                                   Navigator.of(context).pop();
+                                  // try {
+                                  //   // await _purchaseCourse(course);
+                                  //   if (mounted) {
+                                  //     _navigateToMyCourses(context, course);
+                                  //   }
+                                  // } catch (e) {
+                                  //   print('Ошибка при создании курса: $e');
+                                  // }
+                                  // await _purchaseCourse(course);
                                   _navigateToMyCourses(context, course);
                                 },
                                 style: ElevatedButton.styleFrom(
