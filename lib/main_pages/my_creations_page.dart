@@ -104,7 +104,6 @@ class _MyCreationsScreenState extends State<MyCreationsScreen> {
 
     if (sessionId != null || csrfToken != null) {
       try {
-
         final url = 'http://80.90.187.60:8001/api/mycreations/';
         final response = await http.get(
           Uri.parse(url),
@@ -119,22 +118,18 @@ class _MyCreationsScreenState extends State<MyCreationsScreen> {
           final rawData = utf8.decode(response.bodyBytes);
           final data = json.decode(rawData);
           print(data);
-          final List<dynamic> results = data['results'];
+          final List<dynamic> results = data;
           return results.map((json) => Course.fromJson(json)).toList();
         } else {
           throw Exception('Failed to load courses');
         }
-
       } catch (e) {
-
         print('Error: $e');
         throw Exception('Failed to load courses due to an error');
       }
     } else {
       throw Exception('SessionID или CSRF токен отсутсвуют');
     }
-
-
   }
 
   void _onItemTapped(int index) {
@@ -159,19 +154,21 @@ class _MyCreationsScreenState extends State<MyCreationsScreen> {
     });
   }
 
-  Future<void> _navigateToCreateCoursePage3(BuildContext context, Course course) async {
+  Future<void> _navigateToCreateCoursePage3(BuildContext context,
+      Course course) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('courseSlug', course.slug);
 
     Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => CreateCoursePage3(
-              courseDescription: course.description,
-              courseAbout: course.targetDescription,
-              courseName: course.title,
-              courseImagePath: course.logo,
-            )
+            builder: (context) =>
+                CreateCoursePage3(
+                  courseDescription: course.description,
+                  courseAbout: course.targetDescription,
+                  courseName: course.title,
+                  courseImagePath: course.logo,
+                )
         )
     );
   }
@@ -215,7 +212,7 @@ class _MyCreationsScreenState extends State<MyCreationsScreen> {
                       onTap: () {
                         _navigateToCreateCoursePage3(context, course);
                       },
-                      child:  Padding(
+                      child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Card(
                           elevation: 4.0,
@@ -229,7 +226,8 @@ class _MyCreationsScreenState extends State<MyCreationsScreen> {
                                 children: [
                                   Container(
                                     width: double.infinity,
-                                    height: 250, // Увеличиваем высоту контейнера
+                                    height: 250,
+                                    // Увеличиваем высоту контейнера
                                     decoration: BoxDecoration(
                                       color: Color(0xFFF596B9),
                                       borderRadius: BorderRadius.circular(10),
@@ -255,30 +253,37 @@ class _MyCreationsScreenState extends State<MyCreationsScreen> {
                                       alignment: Alignment.center,
                                       child: Container(
                                         width: double.infinity,
-                                        height: 200, // Уменьшаем высоту плашки
-                                        margin: EdgeInsets.all(20), // Добавляем отступы от границ картинки
+                                        height: 200,
+                                        // Уменьшаем высоту плашки
+                                        margin: EdgeInsets.all(20),
+                                        // Добавляем отступы от границ картинки
                                         decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.5), // Полупрозрачный фон
-                                          borderRadius: BorderRadius.circular(10),
+                                          color: Colors.white.withOpacity(0.5),
+                                          // Полупрозрачный фон
+                                          borderRadius: BorderRadius.circular(
+                                              10),
                                         ),
                                         child: Padding(
                                           padding: const EdgeInsets.all(16.0),
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment: CrossAxisAlignment
+                                                .start,
                                             children: [
                                               Text(
                                                 course.title,
-                                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                                style: TextStyle(fontSize: 25,
+                                                    fontWeight: FontWeight
+                                                        .bold),
                                               ),
-                                              SizedBox(height: 10),
-                                              Text(
-                                                course.description,
-                                                style: TextStyle(fontSize: 16),
-                                              ),
-                                              SizedBox(height: 10),
-                                              Text(
-                                                course.targetDescription,
-                                                style: TextStyle(fontSize: 16),
+
+                                              Expanded(
+                                                child: SingleChildScrollView(
+                                                  child: Text(
+                                                    course.targetDescription,
+                                                    style: TextStyle(
+                                                        fontSize: 20),
+                                                  ),
+                                                ),
                                               ),
                                             ],
                                           ),
@@ -291,7 +296,7 @@ class _MyCreationsScreenState extends State<MyCreationsScreen> {
                             ],
                           ),
                         ),
-                      )
+                      ),
                     );
                   },
                 ),
@@ -313,14 +318,14 @@ class _MyCreationsScreenState extends State<MyCreationsScreen> {
                   onPressed: () async {
                     final result = await Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => CreateCoursePage()),
+                      MaterialPageRoute(
+                          builder: (context) => CreateCoursePage()),
                     );
                     if (result != null) {
-                      // _addCourse(result['name'], result['description'], result['about'], result['image']);
-
                       setState(() {
                         _courses.add(Course(
-                          id: 0, // Temporary ID
+                          id: 0,
+                          // Temporary ID
                           title: result['name'],
                           description: result['description'],
                           targetDescription: result['targetDescription'],
