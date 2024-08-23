@@ -79,11 +79,11 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
       print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
-        final data = json.decode(utf8.decode(response.bodyBytes));
+        final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes)) as List<dynamic>;
         print('Decoded data: $data');
-        final List<dynamic> results = data['results'] ?? [];
+
         setState(() {
-          _modules = results.map((item) {
+          _modules = data.map((item) {
             return {
               'id': item['id'].toString(),
               'title': item['title'],
@@ -224,21 +224,6 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                         color: Color(0xFFF596B9),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      // child: widget.courseImagePath != null
-                      //     ? ClipRRect(
-                      //   borderRadius: BorderRadius.circular(10),
-                      //   child: Image.network(
-                      //     widget.courseImagePath!,
-                      //     fit: BoxFit.cover,
-                      //   ),
-                      // )
-                      //     : Center(
-                      //   child: Icon(
-                      //     Icons.photo,
-                      //     color: Colors.white,
-                      //     size: 80,
-                      //   ),
-                      // ),
                       child: widget.courseImagePath != null && widget.courseImagePath!.isNotEmpty
                           ? widget.courseImagePath!.startsWith('http')
                           ? ClipRRect(
