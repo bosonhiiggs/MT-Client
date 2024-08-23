@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../complete_the_course/course_details_screen.dart';
 import 'profile_page.dart';
 import 'music_courses_page.dart';
 import 'my_creations_page.dart';
@@ -153,16 +154,12 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
   }
 
   Future<void> _navigateToCourseDetails(BuildContext context, Course course) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('courseSlug', course.slug);
-
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => CourseDetailsPage(course: course),
-      ),
+      MaterialPageRoute(builder: (context) => CourseDetailsScreen(course: course)),
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -308,53 +305,3 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
   }
 }
 
-class CourseDetailsPage extends StatelessWidget {
-  final Course course;
-
-  CourseDetailsPage({required this.course});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(course.title),
-        backgroundColor: Color(0xFFF48FB1),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Описание:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Text(course.description),
-            SizedBox(height: 16),
-            Text(
-              'Цель курса:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Text(course.targetDescription),
-            SizedBox(height: 16),
-            Text(
-              'Создатель:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Text(course.creatorUsername),
-            SizedBox(height: 16),
-            Text(
-              'Дата создания:',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Text(course.createdAtFormatted),
-          ],
-        ),
-      ),
-    );
-  }
-}
