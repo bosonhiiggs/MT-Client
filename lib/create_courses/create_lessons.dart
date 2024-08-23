@@ -308,7 +308,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                     direction: DismissDirection.endToStart,
                     background: Container(
                       color: Color(0xFFF48FB1), // Цвет фона при свайпе
-                      alignment: Alignment.centerRight,
+                      alignment: Alignment.centerLeft,
                       padding: EdgeInsets.symmetric(horizontal: 20),
                       child: Icon(
                         Icons.delete,
@@ -325,17 +325,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                     },
                     child: ListTile(
                       title: Text(lesson['title'] ?? ''),
-                      trailing: IconButton(
-                        icon: Icon(Icons.delete),
-                        onPressed: () async {
-                          final deleted = await _deleteLesson(lesson['id']!, index);
-                          if (deleted) {
-                            setState(() {
-                              _lessons.removeAt(index);
-                            });
-                          }
-                        },
-                      ),
+
                     ),
                   );
                 },
