@@ -37,7 +37,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
   void initState() {
     super.initState();
     _loadPreferences();
-    _moduleController.text = 'Новый модуль'; // Устанавливаем начальный текст
+    _moduleController.text = ''; // Оставляем поле ввода пустым при инициализации
   }
 
   @override
@@ -60,6 +60,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
   }
 
   Future<void> _fetchModules() async {
+
     if (_courseSlug == null) return;
 
     final url = 'http://80.90.187.60:8001/api/mycreations/create/$_courseSlug/modules/';
@@ -105,6 +106,11 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
 
     final url = 'http://80.90.187.60:8001/api/mycreations/create/$_courseSlug/modules/';
     print('Creating module at: $url');
+
+    // Если название модуля пустое, используем "Новый модуль"
+    if (moduleTitle.isEmpty) {
+      moduleTitle = 'Новый модуль';
+    }
 
     final msgJson = json.encode({
       'title': moduleTitle,
@@ -181,11 +187,11 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
 
   void _onAddModulePressed() {
     final moduleTitle = _moduleController.text.trim();
-    if (moduleTitle.isNotEmpty) {
-      _createModule(moduleTitle);
-      _moduleController.clear();
-      _moduleController.text = 'Новый модуль';
-    }
+    // Если поле ввода пустое, используем "Новый модуль"
+    final titleToUse = moduleTitle.isEmpty ? 'Новый модуль' : moduleTitle;
+
+    _createModule(titleToUse);
+    _moduleController.clear(); // Очищаем поле ввода после добавления
   }
 
   void _onSavePressed() {
@@ -265,7 +271,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                           margin: EdgeInsets.all(20),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.5),
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(8.0),
                           ),
                           child: SingleChildScrollView(
                             child: Padding(
@@ -273,6 +279,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  // Название курса
                                   Text(
                                     widget.courseName,
                                     style: TextStyle(
@@ -282,14 +289,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                                     ),
                                   ),
                                   SizedBox(height: 16),
-                                  Text(
-                                    widget.courseDescription,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                  SizedBox(height: 16),
+                                  // Жирный заголовок "Чему учит курс"
                                   Text(
                                     'Чему учит курс',
                                     style: TextStyle(
@@ -299,6 +299,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                                     ),
                                   ),
                                   SizedBox(height: 8),
+                                  // Описание курса
                                   Text(
                                     widget.courseDescription,
                                     style: TextStyle(
@@ -307,6 +308,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                                     ),
                                   ),
                                   SizedBox(height: 16),
+                                  // Жирный заголовок "О курсе"
                                   Text(
                                     'О курсе',
                                     style: TextStyle(
@@ -316,6 +318,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                                     ),
                                   ),
                                   SizedBox(height: 8),
+                                  // Описание "О курсе"
                                   Text(
                                     widget.courseAbout,
                                     style: TextStyle(
@@ -368,7 +371,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Color(0xFFF48FB1),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.zero,
+                                    borderRadius: BorderRadius.circular(8.0),
                                   ),
                                   minimumSize: Size(double.infinity, 50),
                                 ),
@@ -404,7 +407,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                         controller: _moduleController,
                         decoration: InputDecoration(
                           border: OutlineInputBorder(),
-                          labelText: 'Название нового модуля',
+                          hintText: 'Новый модуль', // Надпись в поле ввода
                         ),
                         style: TextStyle(
                           color: Colors.black, // Цвет текста в поле ввода

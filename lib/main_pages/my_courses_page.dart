@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../complete_the_course/course_details_screen.dart';
+import '../base/base_screen_state.dart';
+import '../base/bottom_navigation_utils.dart';
 import 'profile_page.dart';
 import 'music_courses_page.dart';
 import 'my_creations_page.dart';
@@ -66,7 +68,7 @@ class MyCoursesScreen extends StatefulWidget {
   _MyCoursesScreenState createState() => _MyCoursesScreenState();
 }
 
-class _MyCoursesScreenState extends State<MyCoursesScreen> {
+class _MyCoursesScreenState extends BaseScreenState<MyCoursesScreen> {
   int _selectedIndex = 1;
   List<Course> _courses = [];
 
@@ -128,28 +130,6 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
   void _addSelectedCourse(Course course) {
     setState(() {
       _courses.add(course);
-    });
-  }
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-      if (index == 3) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => ProfilePage()),
-        );
-      } else if (index == 0) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => MusicCoursesScreen()),
-        );
-      } else if (index == 2) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => MyCreationsScreen()),
-        );
-      }
     });
   }
 
@@ -268,39 +248,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.menu, color: Colors.white),
-            label: 'Каталог',
-            backgroundColor: Color(0xFFF48FB1),
-            activeIcon: Icon(Icons.menu, color: Colors.black),
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite_border, color: Colors.white),
-            label: 'Мои курсы',
-            backgroundColor: Color(0xFFF48FB1),
-            activeIcon: Icon(Icons.favorite_border, color: Colors.black),
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.storage_outlined, color: Colors.white),
-            label: 'Преподавание',
-            backgroundColor: Color(0xFFF48FB1),
-            activeIcon: Icon(Icons.storage_outlined, color: Colors.black),
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person, color: Colors.white),
-            label: 'Мой профиль',
-            backgroundColor: Color(0xFFF48FB1),
-            activeIcon: Icon(Icons.person, color: Colors.black),
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.white,
-        backgroundColor: Color(0xFFF48FB1),
-        onTap: _onItemTapped,
-      ),
+      bottomNavigationBar: buildBottomNavigationBar(_selectedIndex, onItemTapped)
     );
   }
 }

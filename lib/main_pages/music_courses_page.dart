@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../base/base_screen_state.dart';
+import '../base/bottom_navigation_utils.dart';
 import 'profile_page.dart';
 import 'my_courses_page.dart';
 import 'my_creations_page.dart';
@@ -61,7 +63,7 @@ class MusicCoursesScreen extends StatefulWidget {
   _MusicCoursesScreenState createState() => _MusicCoursesScreenState();
 }
 
-class _MusicCoursesScreenState extends State<MusicCoursesScreen> {
+class _MusicCoursesScreenState extends BaseScreenState<MusicCoursesScreen> {
   int _selectedIndex = 0;
   List<Course> _courses = [];
 
@@ -136,11 +138,6 @@ class _MusicCoursesScreenState extends State<MusicCoursesScreen> {
 
       final response = await http.post(
         Uri.parse(url),
-        // headers: {
-        //   'Content-Type': 'application/json; charset=UTF-8',
-        //   'Cookie': 'sessionid=$sessionId',
-        //   'X-CSRFToken': csrfToken,
-        // },
         headers: {
           'Content-Type': 'application/json',
           'Cookie': 'sessionid=$sessionId; csrftoken=$csrfToken',
@@ -162,28 +159,6 @@ class _MusicCoursesScreenState extends State<MusicCoursesScreen> {
     }
 
     }
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-      if (index == 1) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => MyCoursesScreen()),
-        );
-      } else if (index == 3) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => ProfilePage()),
-        );
-      } else if (index == 2) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => MyCreationsScreen()),
-        );
-      }
-    });
-  }
 
   Future<void> _showStartCourseDialog(BuildContext context, Course course) async {
     return showDialog<void>(
@@ -417,39 +392,7 @@ class _MusicCoursesScreenState extends State<MusicCoursesScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.menu, color: Colors.white),
-            label: 'Каталог',
-            backgroundColor: Color(0xFFF48FB1),
-            activeIcon: Icon(Icons.menu, color: Colors.black),
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite_border, color: Colors.white),
-            label: 'Мои курсы',
-            backgroundColor: Color(0xFFF48FB1),
-            activeIcon: Icon(Icons.favorite_border, color: Colors.black),
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.storage_outlined, color: Colors.white),
-            label: 'Преподавание',
-            backgroundColor: Color(0xFFF48FB1),
-            activeIcon: Icon(Icons.storage_outlined, color: Colors.black),
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person, color: Colors.white),
-            label: 'Мой профиль',
-            backgroundColor: Color(0xFFF48FB1),
-            activeIcon: Icon(Icons.person, color: Colors.black),
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.white,
-        backgroundColor: Color(0xFFF48FB1),
-        onTap: _onItemTapped,
-      ),
+        bottomNavigationBar: buildBottomNavigationBar(_selectedIndex, onItemTapped)
     );
   }
 }

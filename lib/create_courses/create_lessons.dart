@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-// Убедитесь, что этот импорт правильный
 import 'create_course_moduels.dart';
 
 class CreateLessonPage extends StatefulWidget {
@@ -12,7 +11,7 @@ class CreateLessonPage extends StatefulWidget {
   final int moduleIndex;
   final String moduleName;
   final String moduleId;
-  final String? courseImagePath; // Сделайте параметр необязательным
+  final String? courseImagePath;
 
   CreateLessonPage({
     required this.courseSlug,
@@ -21,7 +20,7 @@ class CreateLessonPage extends StatefulWidget {
     required this.moduleIndex,
     required this.moduleName,
     required this.moduleId,
-    this.courseImagePath, // Добавьте этот параметр
+    this.courseImagePath,
   });
 
   @override
@@ -31,7 +30,8 @@ class CreateLessonPage extends StatefulWidget {
 class _CreateLessonPageState extends State<CreateLessonPage> {
   late String _moduleName;
   late TextEditingController _moduleNameController;
-  List<Map<String, String>> _lessons = []; // Changed to hold a map with ID and title
+  late TextEditingController _lessonTitleController;
+  List<Map<String, dynamic>> _lessons = []; // Изменён тип переменной
 
   String? _sessionId;
   String? _csrfToken;
@@ -41,8 +41,16 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
     super.initState();
     _moduleName = widget.moduleName;
     _moduleNameController = TextEditingController(text: _moduleName);
+    _lessonTitleController = TextEditingController();
     _loadPreferences();
-    _loadLessons(); // Load lessons from server or other source
+    _loadLessons();
+  }
+
+  @override
+  void dispose() {
+    _moduleNameController.dispose();
+    _lessonTitleController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadPreferences() async {
@@ -51,16 +59,75 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
       _sessionId = prefs.getString('sessionid');
       _csrfToken = prefs.getString('csrftoken');
     });
+
+    // Вывод значений в терминал
+
   }
 
   Future<void> _loadLessons() async {
-    // Load lessons from your server
-    // Dummy data
-    setState(() {
-      _lessons = [
-        {'id': '1', 'title': 'Новый урок'},
-      ];
-    });
+    SharedPreferences prefs_second = await SharedPreferences.getInstance();
+    String? sessionId = prefs_second.getString('sessionid');
+    String? csrfToken = prefs_second.getString('csrftoken');
+
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget.courseSlug}/modules/${widget.moduleId}';
+
+    print('Loading lessons with URL: $url');
+
+    try {
+
+
+      final headers = {
+        'Content-Type': 'application/json',
+      };
+
+      print('Session ID: $_sessionId');
+      print('CSRF Token: $_csrfToken');
+
+      if (_sessionId != null && _csrfToken != null) {
+        headers['Cookie'] = 'sessionid=$_sessionId; csrftoken=$_csrfToken';
+        headers['X-CSRFToken'] = _csrfToken!;
+        print('Session ID: $_sessionId');
+        print('CSRF Token: $_csrfToken');
+      }
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': 'sessionid=$sessionId; csrftoken=$csrfToken',
+          // 'X-CSRFToken': csrfToken,
+
+        },
+      );
+
+
+      final rawData = utf8.decode(response.bodyBytes);
+
+      if (response.statusCode == 200) {
+        print('Successfully loaded lessons');
+        print('Response data: $rawData');
+
+        final data = json.decode(rawData);
+        setState(() {
+          // Обрабатываем ответ от сервера
+          final moduleData = data[0];
+          final lessonsData = data[1];
+
+          _moduleName = moduleData['module_title'] ?? '';
+          _lessons = (lessonsData as List).map((lesson) {
+            return {
+              'id': lesson['id'].toString(),
+              'title': lesson['title']
+            };
+          }).toList();
+        });
+      } else {
+        print('Error loading lessons: ${response.statusCode}');
+        print('Response body: $rawData');
+      }
+    } catch (e) {
+      print('Error loading lessons: $e');
+    }
   }
 
   Future<void> _updateModuleTitle(String newTitle) async {
@@ -70,22 +137,26 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
     print('Updating module title with URL: $url');
     print('Request body: $msgJson');
 
-    final response = await http.patch(
-      Uri.parse(url),
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': 'sessionid=$_sessionId; csrftoken=$_csrfToken',
-        'X-CSRFToken': _csrfToken!,
-      },
-      body: msgJson,
-    );
+    try {
+      final response = await http.patch(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': 'sessionid=$_sessionId; csrftoken=$_csrfToken',
+          'X-CSRFToken': _csrfToken!,
+        },
+        body: msgJson,
+      );
 
-    final rawData = utf8.decode(response.bodyBytes);
-    if (response.statusCode == 200) {
-      print('Module title successfully updated');
-    } else {
-      print('Error updating module title: ${response.statusCode}');
-      print('Response body: $rawData');
+      final rawData = utf8.decode(response.bodyBytes);
+      if (response.statusCode == 200) {
+        print('Module title successfully updated');
+      } else {
+        print('Error updating module title: ${response.statusCode}');
+        print('Response body: $rawData');
+      }
+    } catch (e) {
+      print('Error updating module title: $e');
     }
   }
 
@@ -95,41 +166,49 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
   }
 
   Future<void> _createLesson(String lessonTitle) async {
+    if (lessonTitle.isEmpty) {
+      lessonTitle = 'Новый урок';
+    }
+
     final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget.courseSlug}/modules/${widget.moduleId}';
     final msgJson = json.encode({'title': lessonTitle});
 
     print('Creating lesson with URL: $url');
     print('Request body: $msgJson');
 
-    final response = await http.post(
-      Uri.parse(url),
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': 'sessionid=$_sessionId; csrftoken=$_csrfToken',
-        'X-CSRFToken': _csrfToken!,
-      },
-      body: msgJson,
-    );
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': 'sessionid=$_sessionId; csrftoken=$_csrfToken',
+          'X-CSRFToken': _csrfToken!,
+        },
+        body: msgJson,
+      );
 
-    final rawData = utf8.decode(response.bodyBytes);
-    print('Raw response data: $rawData');
+      final rawData = utf8.decode(response.bodyBytes);
+      print('Raw response data: $rawData');
 
-    if (response.statusCode == 201) {
-      try {
-        final data = json.decode(rawData);
-        final lessonId = data['id'].toString(); // Получаем ID урока из ответа
-        print('Lesson successfully created with ID: $lessonId');
-        await _saveLessonId(lessonId); // Сохраняем ID урока
+      if (response.statusCode == 201) {
+        try {
+          final data = json.decode(rawData);
+          final lessonId = data['id'].toString();
+          print('Lesson successfully created with ID: $lessonId');
+          await _saveLessonId(lessonId);
 
-        setState(() {
-          _lessons.add({'id': lessonId, 'title': lessonTitle});
-        });
-      } catch (e) {
-        print('Error decoding JSON: $e');
+          setState(() {
+            _lessons.add({'id': lessonId, 'title': lessonTitle});
+          });
+        } catch (e) {
+          print('Error decoding JSON: $e');
+        }
+      } else {
+        print('Error creating lesson: ${response.statusCode}');
+        print('Response body: $rawData');
       }
-    } else {
-      print('Error creating lesson: ${response.statusCode}');
-      print('Response body: $rawData');
+    } catch (e) {
+      print('Error creating lesson: $e');
     }
   }
 
@@ -138,65 +217,29 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
 
     print('Deleting lesson with URL: $url');
 
-    final response = await http.delete(
-      Uri.parse(url),
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': 'sessionid=$_sessionId; csrftoken=$_csrfToken',
-        'X-CSRFToken': _csrfToken!,
-      },
-    );
+    try {
+      final response = await http.delete(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': 'sessionid=$_sessionId; csrftoken=$_csrfToken',
+          'X-CSRFToken': _csrfToken!,
+        },
+      );
 
-    if (response.statusCode == 204) {
-      print('Lesson successfully deleted');
-      return true;
-    } else {
-      print('Error deleting lesson: ${response.statusCode}');
-      print('Response headers: ${response.headers}');
-      print('Response body: ${utf8.decode(response.bodyBytes)}');
+      if (response.statusCode == 204) {
+        print('Lesson successfully deleted');
+        return true;
+      } else {
+        print('Error deleting lesson: ${response.statusCode}');
+        print('Response headers: ${response.headers}');
+        print('Response body: ${utf8.decode(response.bodyBytes)}');
+        return false;
+      }
+    } catch (e) {
+      print('Error deleting lesson: $e');
       return false;
     }
-  }
-
-  Future<String?> _showAddLessonDialog(BuildContext context) async {
-    String? lessonTitle;
-    return showDialog<String>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Введите название урока'),
-          content: TextField(
-            autofocus: true,
-            decoration: InputDecoration(
-              hintText: 'Название урока',
-            ),
-            onChanged: (value) {
-              lessonTitle = value;
-            },
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Отмена'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(lessonTitle);
-              },
-              child: Text('Добавить'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  @override
-  void dispose() {
-    _moduleNameController.dispose();
-    super.dispose();
   }
 
   @override
@@ -205,7 +248,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
       appBar: AppBar(
         title: Text('Создание уроков'),
         centerTitle: true,
-        backgroundColor: Color(0xFFF48FB1), // Цвет AppBar
+        backgroundColor: Color(0xFFF48FB1),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -216,7 +259,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
               Container(
                 padding: EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
-                  color: Color(0xFFF48FB1), // Цвет контейнера для модуля
+                  color: Color(0xFFF48FB1),
                   borderRadius: BorderRadius.circular(10.0),
                   boxShadow: [
                     BoxShadow(
@@ -272,9 +315,8 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                               builder: (context) => CreateCoursePage3(
                                 courseDescription: widget.courseDescription,
                                 courseAbout: widget.courseAbout,
-                                courseName: _moduleName,
+                                courseName: widget.courseSlug,
                                 courseImagePath: widget.courseImagePath,
-                                // Здесь можно изменить по необходимости
                               ),
                             ),
                           );
@@ -282,8 +324,8 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                       },
                       child: Text('Сохранить изменения'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFFF48FB1), // Цвет кнопки
-                        foregroundColor: Colors.white, // Цвет текста на кнопке
+                        backgroundColor: Color(0xFFF48FB1),
+                        foregroundColor: Colors.white,
                       ),
                     ),
                   ],
@@ -303,45 +345,78 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                 itemCount: _lessons.length,
                 itemBuilder: (context, index) {
                   final lesson = _lessons[index];
-                  return Dismissible(
-                    key: UniqueKey(),
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      color: Color(0xFFF48FB1), // Цвет фона при свайпе
-                      alignment: Alignment.centerLeft,
-                      padding: EdgeInsets.symmetric(horizontal: 20),
-                      child: Icon(
-                        Icons.delete,
+                  final lessonNumber = index + 1; // Индексы начинаются с 1
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: Dismissible(
+                      key: UniqueKey(),
+                      direction: DismissDirection.horizontal,
+                      background: Container(
                         color: Colors.white,
+                        alignment: Alignment.centerLeft,
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        child: Icon(
+                          Icons.delete,
+                          color: Color(0xFFF48FB1),
+                        ),
                       ),
-                    ),
-                    onDismissed: (direction) async {
-                      final deleted = await _deleteLesson(lesson['id']!, index);
-                      if (deleted) {
-                        setState(() {
-                          _lessons.removeAt(index);
-                        });
-                      }
-                    },
-                    child: ListTile(
-                      title: Text(lesson['title'] ?? ''),
-
+                      secondaryBackground: Container(
+                        color: Colors.white,
+                        alignment: Alignment.centerRight,
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        child: Icon(
+                          Icons.delete,
+                          color: Color(0xFFF48FB1),
+                        ),
+                      ),
+                      onDismissed: (direction) async {
+                        final deleted = await _deleteLesson(lesson['id']!, index);
+                        if (deleted) {
+                          setState(() {
+                            _lessons.removeAt(index);
+                          });
+                        }
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Color(0xFFF48FB1),
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        child: ListTile(
+                          title: Text(
+                            '$lessonNumber. ${lesson['title'] ?? ''}',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
                     ),
                   );
                 },
               ),
               SizedBox(height: 16),
+              TextFormField(
+                controller: _lessonTitleController,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Название нового урока',
+                ),
+                style: TextStyle(
+                  color: Colors.black,
+                ),
+              ),
+              SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () async {
-                  final lessonTitle = await _showAddLessonDialog(context);
-                  if (lessonTitle != null && lessonTitle.isNotEmpty) {
-                    await _createLesson(lessonTitle);
-                  }
+                  final lessonTitle = _lessonTitleController.text;
+                  // Если название урока пустое, используйте "Новый урок"
+                  await _createLesson(lessonTitle);
+                  _lessonTitleController.clear();
                 },
                 child: Text('Добавить урок'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFFF48FB1), // Цвет кнопки
-                  foregroundColor: Colors.white, // Цвет текста на кнопке
+                  backgroundColor: Color(0xFFF48FB1),
+                  foregroundColor: Colors.white,
                 ),
               ),
             ],
