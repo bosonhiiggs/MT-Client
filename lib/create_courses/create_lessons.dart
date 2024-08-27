@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'create_course_moduels.dart';
+import 'create_lessons_filling.dart';
 
 class CreateLessonPage extends StatefulWidget {
   final String courseSlug;
@@ -346,6 +347,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                 itemBuilder: (context, index) {
                   final lesson = _lessons[index];
                   final lessonNumber = index + 1; // Индексы начинаются с 1
+
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 16.0),
                     child: Dismissible(
@@ -377,16 +379,37 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                           });
                         }
                       },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Color(0xFFF48FB1),
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                        child: ListTile(
-                          title: Text(
-                            '$lessonNumber. ${lesson['title'] ?? ''}',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.white),
+                      child: InkWell(
+                        onTap: () {
+                          // Переход на CreateLessonPage2 при нажатии на урок
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CreateLessonPage2(
+                                courseSlug: widget.courseSlug,
+                                courseDescription: widget.courseDescription,
+                                courseAbout: widget.courseAbout,
+                                moduleIndex: widget.moduleIndex,
+                                moduleName: widget.moduleName,
+                                lessonIndex: index, // Индекс урока
+                                lessonName: lesson['title'] ?? '', // Название урока
+                                moduleId: widget.moduleId,
+                                lessonId: lesson['id'] ?? '', // Передайте ID урока
+                              ),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Color(0xFFF48FB1),
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: ListTile(
+                            title: Text(
+                              '$lessonNumber. ${lesson['title'] ?? ''}',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.white),
+                            ),
                           ),
                         ),
                       ),
@@ -394,6 +417,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
                   );
                 },
               ),
+
               SizedBox(height: 16),
               TextFormField(
                 controller: _lessonTitleController,

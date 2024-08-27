@@ -22,6 +22,8 @@ dependencies:
   appmetrica_plugin: ^2.1.1
   http: ^1.2.1
   cached_network_image: ^3.0.0
+  mime_type: ^1.0.0
+
 
   image: ^4.2.0
 
