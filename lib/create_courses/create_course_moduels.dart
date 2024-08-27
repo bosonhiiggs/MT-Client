@@ -279,6 +279,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  // Название курса
                                   Text(
                                     widget.courseName,
                                     style: TextStyle(
@@ -288,14 +289,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                                     ),
                                   ),
                                   SizedBox(height: 16),
-                                  Text(
-                                    widget.courseDescription,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                  SizedBox(height: 16),
+                                  // Жирный заголовок "Чему учит курс"
                                   Text(
                                     'Чему учит курс',
                                     style: TextStyle(
@@ -305,6 +299,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                                     ),
                                   ),
                                   SizedBox(height: 8),
+                                  // Описание курса
                                   Text(
                                     widget.courseDescription,
                                     style: TextStyle(
@@ -313,6 +308,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                                     ),
                                   ),
                                   SizedBox(height: 16),
+                                  // Жирный заголовок "О курсе"
                                   Text(
                                     'О курсе',
                                     style: TextStyle(
@@ -322,6 +318,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                                     ),
                                   ),
                                   SizedBox(height: 8),
+                                  // Описание "О курсе"
                                   Text(
                                     widget.courseAbout,
                                     style: TextStyle(
