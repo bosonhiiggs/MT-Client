@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../main_pages/my_courses_page.dart';
+import 'lesson_content_screen.dart'; // Импортируем второй файл
 
 class CourseDetailsScreen extends StatefulWidget {
   final Course course;
@@ -23,6 +24,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   List<Comment> _comments = [];
   String _commentText = '';
   double _rating = 0.0;
+  bool _isLoading = true;
+  String _userFirstName = '';
+  String _userLastName = '';
 
   @override
   void initState() {
@@ -35,6 +39,8 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     setState(() {
       _sessionId = prefs.getString('sessionid');
       _csrfToken = prefs.getString('csrftoken');
+      _userFirstName = prefs.getString('first_name') ?? '';
+      _userLastName = prefs.getString('last_name') ?? '';
     });
 
     if (_sessionId != null || _csrfToken != null) {
@@ -75,14 +81,21 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
 
         setState(() {
           _modules = modules;
+          _isLoading = false;
         });
         print('Modules fetched successfully: $_modules');
       } else {
         print('Failed to fetch modules: ${response.statusCode}');
         print('Response body: ${response.body}');
+        setState(() {
+          _isLoading = false;
+        });
       }
     } catch (e) {
       print('Error fetching modules: $e');
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -160,10 +173,25 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   }
 
   Future<void> _submitComment() async {
-    if (_sessionId == null || _csrfToken == null) return;
+    if (_sessionId == null || _csrfToken == null || _currentLessonId == null) return;
 
-    final url = 'http://80.90.187.60:8001/api/mycourses/${widget.course.slug}/modules/${_currentLessonId}/comments/';
-    print('Submitting comment to: $url');
+    // Assuming you have the module_id, lesson_id, and content_id available
+    final moduleId = 1; // Replace with the actual module ID
+    final lessonId = _currentLessonId; // Replace with the actual lesson ID if different
+    final contentId = 1; // Replace with the actual content ID
+
+    // Construct the URL
+    final url = 'http://80.90.187.60:8001/api/mycourses/${widget.course.slug}/modules/$moduleId/$lessonId/$contentId/comments/';
+    print('Submitting comment to: $url'); // Debugging information
+
+    // Construct the request body
+    final requestBody = json.encode({
+      'comment': _commentText,
+      'ratings': [_rating],
+      'first_name': _userFirstName,
+      'last_name': _userLastName,
+    });
+    print('Request body: $requestBody'); // Debugging information
 
     try {
       final response = await http.post(
@@ -173,19 +201,16 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           'Cookie': 'sessionid=$_sessionId',
           'X-CSRFToken': _csrfToken!,
         },
-        body: json.encode({
-          'comment': _commentText,
-          'ratings': [_rating],
-        }),
+        body: requestBody,
       );
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
+      print('Response status: ${response.statusCode}'); // Debugging information
+      print('Response body: ${response.body}'); // Debugging information
 
       if (response.statusCode == 201) {
         final rawData = utf8.decode(response.bodyBytes);
         final data = json.decode(rawData);
-        print('Decoded data: $data');
+        print('Decoded data: $data'); // Debugging information
 
         Comment newComment = Comment.fromJson(data);
 
@@ -194,13 +219,13 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           _commentText = '';
           _rating = 0.0;
         });
-        print('Comment submitted successfully: $newComment');
+        print('Comment submitted successfully: $newComment'); // Debugging information
       } else {
-        print('Failed to submit comment: ${response.statusCode}');
-        print('Response body: ${response.body}');
+        print('Failed to submit comment: ${response.statusCode}'); // Debugging information
+        print('Response body: ${response.body}'); // Debugging information
       }
     } catch (e) {
-      print('Error submitting comment: $e');
+      print('Error submitting comment: $e'); // Debugging information
     }
   }
 
@@ -244,7 +269,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         centerTitle: true,
         backgroundColor: Color(0xFFF48FB1),
       ),
-      body: SingleChildScrollView(
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -446,18 +473,18 @@ class _ModuleTileState extends State<ModuleTile> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(bottom: 16.0), // Add spacing between modules
+      margin: EdgeInsets.only(bottom: 16.0),
       width: MediaQuery.of(context).size.width,
       color: Color(0xFFF48FB1),
       child: Theme(
         data: Theme.of(context).copyWith(
           dividerColor: Colors.transparent,
           expansionTileTheme: ExpansionTileThemeData(
-            backgroundColor: Color(0xFFF48FB1), // Set the background color for the module tile
-            iconColor: Colors.white, // Set the color for the arrow icon
+            backgroundColor: Color(0xFFF48FB1),
+            iconColor: Colors.white,
           ),
           listTileTheme: ListTileThemeData(
-            tileColor: Colors.white, // Set the background color for the lesson tiles
+            tileColor: Colors.white,
           ),
         ),
         child: ExpansionTile(
@@ -467,13 +494,13 @@ class _ModuleTileState extends State<ModuleTile> {
             child: Align(
               alignment: Alignment.center,
               child: Text(
-                '${widget.moduleIndex}. ${widget.module.title}', // Add indexing
+                '${widget.moduleIndex}. ${widget.module.title}',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
-                textAlign: TextAlign.center, // Center align text
+                textAlign: TextAlign.center,
               ),
             ),
           ),
@@ -489,15 +516,20 @@ class _ModuleTileState extends State<ModuleTile> {
                 ListTile(
                   title: Text(
                     '${widget.moduleIndex}.$lessonIndex. ${lesson.title}',
-                    style: TextStyle(color: Colors.white), // Set the text color for lessons
+                    style: TextStyle(color: Colors.white),
                   ),
                   onTap: () {
-                    // Handle lesson tap
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => LessonContentScreen(lesson: lesson),
+                      ),
+                    );
                   },
                 ),
                 if (lessonIndex < widget.module.lessons.length)
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0), // Add padding to the sides
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Divider(
                       color: Colors.white,
                       thickness: 1,
