@@ -6,7 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart' show VideoPlayerController, VideoPlayer, VideoProgressIndicator;
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';  // для определения типа контента
-import 'package:mime/mime.dart'; // для определения MIME типа файла
+import 'package:mime/mime.dart';
+
+import 'create_lessons.dart'; // для определения MIME типа файла
 
 
 class LessonData {
@@ -62,15 +64,26 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
   String _taskText = '';
   String _testQuestion = '';
   String _correctAnswer = '';
-  List<String> _wrongAnswers = [''];
+  int _correctAnswerId = 0;
+  String _initialTaskText = '';
+  String _initialQuestionText = '';
+  String _initialCorrectAnswer = '';
+  List<String> _wrongAnswers = [];
+  List<dynamic> _answerListObjects = [];
   PlatformFile? videoFile;
   VideoPlayerController? _controller;
+
+  TextEditingController _taskTextController = TextEditingController();
+  TextEditingController _testQuestionController = TextEditingController();
+  TextEditingController _correctAnswerController = TextEditingController();
+  int? _contentId;
 
   @override
   void initState() {
     super.initState();
     _lessonName = widget.lessonName;
-    print('ID урока: ${widget.lessonId}');
+    _taskTextController.text = _taskText;
+    _fetchLessonData();
   }
 
   @override
@@ -79,26 +92,208 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
     super.dispose();
   }
 
-  Future<void> _initializeController() async {
-    if (videoFile != null) {
-      _controller = VideoPlayerController.file(File(videoFile!.path!))
-        ..initialize().then((_) {
-          setState(() {});
-          _controller?.play();
-        });
+  Future<void> _initializeVideoController(String videoUrl) async {
+    print(videoUrl);
+    _controller = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
+    try {
+      await _controller!.initialize();
+      setState(() {});
+      _controller?.play();
+    } catch (e) {
+      print("Error: $e");
     }
   }
 
-  LessonData _createLessonData() {
-    return LessonData(
-      lessonName: _lessonName,
-      videoPath: _videoPath,
-      taskText: _taskText,
-      testQuestion: _testQuestion,
-      correctAnswer: _correctAnswer,
-      wrongAnswers: _wrongAnswers,
-    );
+  Future<void> _fetchLessonData() async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? sessionid = prefs.getString('sessionid');
+      String? csrfToken = prefs.getString('csrftoken');
+      final Map<String, String> headers = {};
+
+      if (sessionid != null && csrfToken != null) {
+        headers['Cookie'] = 'sessionid=$sessionid; csrftoken=$csrfToken';
+        headers['X-CSRFToken'] = csrfToken;
+      }
+
+      final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget
+          .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/';
+      final response = await http.get(
+        Uri.parse(url),
+        headers: headers
+      );
+
+      if (response.statusCode == 200) {
+        final rawData = utf8.decode(response.bodyBytes);
+        final data = jsonDecode(rawData);
+        print('Decoded data: $data');
+
+        List<dynamic> contents = data['contents'];
+        for (var content in contents) {
+          if (content.containsKey('text_content')) {
+            await _fetchContentData(content['id'], 'text');
+          } else if (content.containsKey('file_content')) {
+            await _fetchContentData(content['id'], 'file');
+          } else if (content.containsKey('question_content')) {
+            await _fetchContentData(content['id'], 'question');
+          }
+          
+        }
+
+      } else {
+        print('Cant load to lesson data. Status code: ${response.statusCode}');
+        print('Body: ${response.body}');
+      }
+
+
+    } catch (e) {
+      print('Error to process load lesson data: $e');
+    }
   }
+
+  Future<void> _fetchContentData(int contentId, String typeObject) async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? sessionid = prefs.getString('sessionid');
+      String? csrfToken = prefs.getString('csrftoken');
+      final Map<String, String> headers = {};
+
+      if (sessionid != null && csrfToken != null) {
+        headers['Cookie'] = 'sessionid=$sessionid; csrftoken=$csrfToken';
+        headers['X-CSRFToken'] = csrfToken;
+      }
+
+      final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/';
+      final response = await http.get(Uri.parse(url), headers: headers);
+
+      if (response.statusCode == 200) {
+        final rawData = utf8.decode(response.bodyBytes);
+        final contentData = jsonDecode(rawData);
+        print('Content data: $contentData');
+        
+        if (typeObject == 'text') {
+          print('text');
+          setState(() {
+            _taskText = contentData['content'];
+            _taskTextController.text = _taskText;
+            _initialTaskText = _taskText;
+            _contentId = contentId;
+          });
+        }
+
+        if (typeObject == 'file') {
+          print('file');
+          setState(() {
+            String videoUrl = "http://80.90.187.60:8001${contentData['file']}";
+            _videoPath = videoUrl;
+            _contentId = contentId;
+          });
+          await _initializeVideoController(_videoPath);
+        }
+
+        if (typeObject == 'question') {
+          print('question');
+          await _parseAnswers(contentId, contentData['answers']);
+          setState(() {
+            _testQuestion = contentData['text'];
+            _testQuestionController.text = _testQuestion;
+            _initialQuestionText = _testQuestion;
+            _contentId = contentId;
+          });
+        }
+
+      } else {
+        print('Failed to load content data. Status code: ${response.statusCode}');
+        print('Body: ${response.body}');
+      }
+    } catch (e) {
+      print('Error fetching content data: $e');
+    }
+  }
+
+  Future<void> _parseAnswers (int questionId, List<dynamic> answers) async {
+    List<String> wrongAnswers = [];
+    for (var answer in answers) {
+
+      if (answer['is_true'] == true) {
+        setState(() {
+          _correctAnswer = answer['text'];
+          _correctAnswerController.text = _correctAnswer;
+          _initialCorrectAnswer = _correctAnswer;
+          _correctAnswerId = answer['id'];
+        });
+      } else if (answer['is_true'] == false) {
+        wrongAnswers.add(answer['text']);
+        _answerListObjects.add(answer);
+      }
+
+    }
+
+    setState(() {
+      _wrongAnswers = wrongAnswers;
+    });
+
+  }
+
+  Future<void> _initializeController() async {
+    if (videoFile != null) {
+      // Инициализируем контроллер с выбранным видео
+      _controller = VideoPlayerController.file(File(videoFile!.path!));
+
+      try {
+        // Асинхронная инициализация видео
+        await _controller!.initialize();
+        // Воспроизведение видео автоматически после инициализации
+        setState(() {
+          _controller?.play();
+        });
+      } catch (e) {
+        // Обработка ошибки при инициализации видео
+        print('Ошибка инициализации видео: $e');
+        // Здесь можно добавить логику показа ошибки пользователю
+      }
+    }
+  }
+
+  Future<void> _updateLessonName() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final sessionId = prefs.getString('sessionid');
+    final csrfToken = prefs.getString('csrftoken');
+
+    final Map<String, String> headers = {
+      'Content-Type': 'application/json',
+    };
+
+    if (sessionId != null && csrfToken != null) {
+      headers['Cookie'] = 'sessionid=$sessionId; csrftoken=$csrfToken';
+      headers['X-CSRFToken'] = csrfToken;
+    }
+
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget
+        .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/';
+
+    final requestBody = {
+      'title': _lessonName,
+    };
+
+    try {
+      final response = await http.patch(
+        Uri.parse(url),
+        headers: headers,
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 200) {
+        print('Lesson name update successfully!');
+      } else {
+        print('Failed to update lesson name: ${response.statusCode}');
+        print('Response body: ${response.body}');
+      }
+    } catch (e) {
+      print('Error updating lesson name: $e');
+    }
+  }
+
 
   Future<void> _sendTextToServer() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -114,14 +309,12 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       headers['X-CSRFToken'] = csrfToken;
     }
 
-    final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/text/';
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget
+        .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/text/';
 
     final requestBody = {
-      'lesson_name': _lessonName,
-      'task_text': _taskText,
-      'test_question': _testQuestion,
-      'correct_answer': _correctAnswer,
-      'wrong_answers': _wrongAnswers.where((answer) => answer.isNotEmpty).toList(),
+      "title": "${widget.courseSlug}${widget.moduleId}-${widget.lessonId}text",
+      "content": _taskText
     };
 
     try {
@@ -131,14 +324,90 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
         body: jsonEncode(requestBody),
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201) {
         print('Text data sent successfully');
       } else {
+        final responseBody = utf8.decode(response.bodyBytes);
         print('Failed to send text data: ${response.statusCode}');
-        print('Response body: ${response.body}');
+        print('Response body: ${responseBody}');
       }
     } catch (e) {
       print('Error sending text data: $e');
+    }
+  }
+
+  Future<void> _deleteTextData(int contentId) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final sessionId = prefs.getString('sessionid');
+    final csrfToken = prefs.getString('csrftoken');
+
+    final Map<String, String> headers = {
+      'Content-Type': 'multipart/form-data',
+    };
+
+    if (sessionId != null && csrfToken != null) {
+      headers['Cookie'] = 'sessionid=$sessionId; csrftoken=$csrfToken';
+      headers['X-CSRFToken'] = csrfToken;
+    }
+
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget
+        .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/';
+
+    try {
+      final response = await http.delete(
+        Uri.parse(url),
+        headers: headers
+      );
+
+      if (response.statusCode == 204) {
+        print('Text data was successfully deleted');
+      } else {
+        print('Failed to delete text data: ${response.statusCode}');
+      }
+
+    } catch (e) {
+      print("Error deleting text data: $e");
+    }
+  }
+
+  Future<void> _updateTextData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final sessionId = prefs.getString('sessionid');
+    final csrfToken = prefs.getString('csrftoken');
+
+    final Map<String, String> headers = {
+      'Content-Type': 'application/json',
+    };
+
+    if (sessionId != null && csrfToken != null) {
+      headers['Cookie'] = 'sessionid=$sessionId; csrftoken=$csrfToken';
+      headers['X-CSRFToken'] = csrfToken;
+    }
+
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget
+        .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/text/';
+
+    final requestBody = {
+      "title": "${widget.courseSlug}${widget.moduleId}-${widget.lessonId}text",
+      "content": _taskText
+    };
+
+    try {
+      final response = await http.patch(
+        Uri.parse(url),
+        headers: headers,
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 200) {
+        print('Text data update successfully');
+      } else {
+        final responseBody = utf8.decode(response.bodyBytes);
+        print('Failed to update text data: ${response.statusCode}');
+        print('Response body: ${responseBody}');
+      }
+    } catch (e) {
+      print('Error update text data: $e');
     }
   }
 
@@ -156,7 +425,8 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       headers['X-CSRFToken'] = csrfToken;
     }
 
-    final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/file/';
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget
+        .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/file/';
 
     var request = http.MultipartRequest('POST', Uri.parse(url))
       ..headers.addAll(headers);
@@ -165,11 +435,14 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
     if (videoFile != null) {
       final mimeType = lookupMimeType(videoFile!.path!);
       final video = await http.MultipartFile.fromPath(
-        'video',
+        'file',
         videoFile!.path!,
         contentType: MediaType.parse(mimeType ?? 'video/mp4'),
       );
+      request.fields['title'] =
+      '${widget.courseSlug}lesson${widget.lessonId}video';
       request.files.add(video);
+      print(request);
 
       // Логируем информацию о видео
       print('Отправляемое видео: ${videoFile!.name}, MIME: $mimeType');
@@ -190,19 +463,418 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
     }
   }
 
+  Future<void> _deleteVideoFromServer (int contentId) async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? sessionid = prefs.getString('sessionid');
+      String? csrfToken = prefs.getString('csrftoken');
+
+      final Map<String, String> headers = {};
+      if (sessionid != null && csrfToken != null) {
+        headers['Cookie'] = 'sessionid=$sessionid; csrftoken=$csrfToken';
+        headers['X-CSRFToken'] = csrfToken;
+      }
+
+      final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget
+          .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/'; // URL для удаления видео
+      final response = await http.delete(Uri.parse(url), headers: headers);
+      print(url);
+      if (response.statusCode == 204) {
+        print('Видео успешно удалено с сервера');
+      } else {
+        print('Ошибка при удалении видео. Статус код: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Ошибка при удалении видео: $e');
+    }
+  }
+
+  Future<void> _sendQuestionToServer () async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final sessionId = prefs.getString('sessionid');
+    final csrfToken = prefs.getString('csrftoken');
+
+    final Map<String, String> headers = {
+      'Content-Type': 'application/json',
+    };
+
+    if (sessionId != null && csrfToken != null) {
+      headers['Cookie'] = 'sessionid=$sessionId; csrftoken=$csrfToken';
+      headers['X-CSRFToken'] = csrfToken;
+    }
+
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget
+        .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/question/';
+
+    final requestBody = {
+      "title": "${widget.courseSlug}${widget.moduleId}-${widget.lessonId}question",
+      "text": _testQuestion
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: headers,
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 201) {
+        print('Question data sent successfully');
+      } else {
+        final responseBody = utf8.decode(response.bodyBytes);
+        print('Failed to send Question data: ${response.statusCode}');
+        print('Response body: ${responseBody}');
+      }
+    } catch (e) {
+      print('Error sending Question data: $e');
+    }
+  }
+
+  Future<void> _deleteQuestionData (int contentId) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final sessionId = prefs.getString('sessionid');
+    final csrfToken = prefs.getString('csrftoken');
+
+    final Map<String, String> headers = {
+      'Content-Type': 'multipart/form-data',
+    };
+
+    if (sessionId != null && csrfToken != null) {
+      headers['Cookie'] = 'sessionid=$sessionId; csrftoken=$csrfToken';
+      headers['X-CSRFToken'] = csrfToken;
+    }
+
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget
+        .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/';
+
+    try {
+      final response = await http.delete(
+          Uri.parse(url),
+          headers: headers
+      );
+
+      if (response.statusCode == 204) {
+        print('Question data was successfully deleted');
+      } else {
+        print('Failed to delete question data: ${response.statusCode}');
+      }
+
+    } catch (e) {
+      print("Error deleting question data: $e");
+    }
+  }
+
+  Future<void> _updateQuestionData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final sessionId = prefs.getString('sessionid');
+    final csrfToken = prefs.getString('csrftoken');
+
+    final Map<String, String> headers = {
+      'Content-Type': 'application/json',
+    };
+
+    if (sessionId != null && csrfToken != null) {
+      headers['Cookie'] = 'sessionid=$sessionId; csrftoken=$csrfToken';
+      headers['X-CSRFToken'] = csrfToken;
+    }
+
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget
+        .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/question/';
+
+    // final requestBody = {};
+
+    final requestBody = {
+      "title": "${widget.courseSlug}${widget.moduleId}-${widget
+          .lessonId}question",
+      "text": _testQuestion
+    };
+
+
+    try {
+      final response = await http.patch(
+        Uri.parse(url),
+        headers: headers,
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 200) {
+        print('Question data update successfully');
+      } else {
+        final responseBody = utf8.decode(response.bodyBytes);
+        print('Failed to update Question data: ${response.statusCode}');
+        print('Response body: ${responseBody}');
+      }
+    } catch (e) {
+      print('Error update Question data: $e');
+    }
+  }
+
+  Future<void> _sendCorrectAnswerToServer() async {
+    print("send correct answer");
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final sessionId = prefs.getString('sessionid');
+    final csrfToken = prefs.getString('csrftoken');
+
+    final Map<String, String> headers = {
+      'Content-Type': 'application/json',
+    };
+
+    if (sessionId != null && csrfToken != null) {
+      headers['Cookie'] = 'sessionid=$sessionId; csrftoken=$csrfToken';
+      headers['X-CSRFToken'] = csrfToken;
+    }
+
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget
+        .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/answer/';
+
+    final requestBody = {
+      "title": "${widget.courseSlug}${widget.moduleId}-${widget.lessonId}answer",
+      "text": _taskText,
+      "is_true": true
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: headers,
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 201) {
+        print('Answer data sent successfully');
+      } else {
+        final responseBody = utf8.decode(response.bodyBytes);
+        print('Failed to send asnwer data: ${response.statusCode}');
+        print('Response body: ${responseBody}');
+      }
+    } catch (e) {
+      print('Error sending answer data: $e');
+    }
+
+  }
+
+  Future<void> _sendUnCorrectAnswerToServer() async {
+    print("send uncorrect answer");
+
+  }
+
+  Future<void> _updateCorrectAnswer() async {
+    print("Update Correct");
+
+    final correctAnswerId = _correctAnswerId;
+    final correctAnswerText = _correctAnswer;
+    print(correctAnswerId);
+    print(correctAnswerText);
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final sessionId = prefs.getString('sessionid');
+    final csrfToken = prefs.getString('csrftoken');
+
+    final Map<String, String> headers = {
+      'Content-Type': 'application/json',
+    };
+
+    if (sessionId != null && csrfToken != null) {
+      headers['Cookie'] = 'sessionid=$sessionId; csrftoken=$csrfToken';
+      headers['X-CSRFToken'] = csrfToken;
+    }
+
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget
+        .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/answer/${correctAnswerId}';
+
+    final requestBody = {
+      "text": correctAnswerText
+    };
+
+    try {
+      final response = await http.patch(
+        Uri.parse(url),
+        headers: headers,
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 200) {
+        print('Answer data update successfully');
+      } else {
+        final responseBody = utf8.decode(response.bodyBytes);
+        print('Failed to update asnwer data: ${response.statusCode}');
+        print('Response body: ${responseBody}');
+      }
+    } catch (e) {
+      print('Error delete answer data: $e');
+    }
+
+  }
+
+  Future<void> _updateWrongAnswer(int index, String answerText) async {
+    print("Update Wrong");
+
+    final answerId = _answerListObjects[index]['id'];
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final sessionId = prefs.getString('sessionid');
+    final csrfToken = prefs.getString('csrftoken');
+
+    final Map<String, String> headers = {
+      'Content-Type': 'application/json',
+    };
+
+    if (sessionId != null && csrfToken != null) {
+      headers['Cookie'] = 'sessionid=$sessionId; csrftoken=$csrfToken';
+      headers['X-CSRFToken'] = csrfToken;
+    }
+
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget
+        .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/answer/${answerId}';
+
+    final requestBody = {
+      "text": answerText
+    };
+
+    try {
+      final response = await http.patch(
+        Uri.parse(url),
+        headers: headers,
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 200) {
+        print('Answer data update successfully');
+      } else {
+        final responseBody = utf8.decode(response.bodyBytes);
+        print('Failed to update answer data: ${response.statusCode}');
+        print('Response body: ${responseBody}');
+      }
+    } catch (e) {
+      print('Error updating answer data: $e');
+    }
+
+    List<Map<String, dynamic>> updateAnswer =[];
+
+    for (int i = 0; i < _wrongAnswers.length; i++) {
+      final answerId = _answerListObjects[i]['id'];
+      final answerText = _wrongAnswers[i];
+      print(answerId);
+      print(answerText);
+
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      final sessionId = prefs.getString('sessionid');
+      final csrfToken = prefs.getString('csrftoken');
+
+      final Map<String, String> headers = {
+        'Content-Type': 'application/json',
+      };
+
+      if (sessionId != null && csrfToken != null) {
+        headers['Cookie'] = 'sessionid=$sessionId; csrftoken=$csrfToken';
+        headers['X-CSRFToken'] = csrfToken;
+      }
+
+      final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget
+          .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/answer/${answerId}';
+
+      final requestBody = {
+        "text": answerText
+      };
+
+      try {
+        final response = await http.patch(
+          Uri.parse(url),
+          headers: headers,
+          body: jsonEncode(requestBody),
+        );
+
+        if (response.statusCode == 200) {
+          print('Answer data update successfully');
+        } else {
+          final responseBody = utf8.decode(response.bodyBytes);
+          print('Failed to update asnwer data: ${response.statusCode}');
+          print('Response body: ${responseBody}');
+        }
+      } catch (e) {
+        print('Error delete answer data: $e');
+      }
+
+    }
+
+  }
+
+  Future<void> _deleteAnswer(answerIndex) async {
+    print("ID for delete: ${answerIndex}");
+    final answer = _answerListObjects[answerIndex];
+    final answerForDeleteId = answer['id'];
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final sessionId = prefs.getString('sessionid');
+    final csrfToken = prefs.getString('csrftoken');
+
+    final Map<String, String> headers = {
+      'Content-Type': 'application/json',
+    };
+
+    if (sessionId != null && csrfToken != null) {
+      headers['Cookie'] = 'sessionid=$sessionId; csrftoken=$csrfToken';
+      headers['X-CSRFToken'] = csrfToken;
+    }
+
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget
+        .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/answer/${answerForDeleteId}';
+
+    try {
+      final response = await http.delete(
+        Uri.parse(url),
+        headers: headers,
+      );
+
+      if (response.statusCode == 204) {
+        print('Answer data delete successfully');
+      } else {
+        final responseBody = utf8.decode(response.bodyBytes);
+        print('Failed to delete asnwer data: ${response.statusCode}');
+        print('Response body: ${responseBody}');
+      }
+    } catch (e) {
+      print('Error delete answer data: $e');
+    }
+
+  }
+
   void _addWrongAnswer() {
-    setState(() {
-      _wrongAnswers.add('');
-    });
+    if (_wrongAnswers.length >= 3) {
+      _showLimitREachedDialog();
+    } else {
+        setState(() {
+          _wrongAnswers.add('');
+        });
+      }
   }
 
   void _removeWrongAnswer(int index) {
     setState(() {
-      if (_wrongAnswers.length > 1) {
+      if (_wrongAnswers.length >= 1) {
         _wrongAnswers.removeAt(index);
       }
     });
   }
+
+  void _showLimitREachedDialog() {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Лимит достигнут'),
+            content: Text('Вы не можете добавить больше 3 неправильных ответов.'),
+            actions: [
+              TextButton(onPressed: () {Navigator.of(context).pop();}, child: Text('OK'))
+            ],
+          );
+        },
+    );
+  }
+
+  bool _isVideoDeleted = false;
+  bool _isNewVideoAdded = false;
 
   @override
   Widget build(BuildContext context) {
@@ -220,66 +892,12 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Container(
-                  padding: EdgeInsets.all(16.0),
-                  decoration: BoxDecoration(
-                    color: Color(0xFFF48FB1),
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  child: TextFormField(
-                    initialValue: _lessonName,
-                    onChanged: (value) {
-                      setState(() {
-                        _lessonName = value;
-                      });
-                    },
-                    style: TextStyle(color: Colors.black),
-                    decoration: InputDecoration(
-                      hintText: 'Название урока',
-                      labelStyle: TextStyle(color: Colors.white),
-                      filled: true,
-                      fillColor: Colors.white,
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white),
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white),
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+              // Поле для названия урока
+              _buildLessonNameField(),
               SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Row(
-                  children: [
-                    Text('Прикрепите видео к уроку: '),
-                    Spacer(),
-                    IconButton(
-                      icon: Icon(Icons.file_download),
-                      color: Color(0xFFF48FB1),
-                      onPressed: () async {
-                        final file = await FilePicker.platform.pickFiles(
-                          type: FileType.video,
-                        );
-
-                        if (file != null) {
-                          setState(() {
-                            videoFile = file.files.first;
-                          });
-                          await _initializeController();
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              if (_controller != null && _controller!.value.isInitialized)
+              // Блок для прикрепления видео
+              _buildVideoAttachmentSection(),
+              if (!_isVideoDeleted && _controller != null && _controller!.value.isInitialized)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8.0),
                   child: Container(
@@ -291,7 +909,8 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
                         VideoPlayer(_controller!),
                         Align(
                           alignment: Alignment.bottomCenter,
-                          child: VideoProgressIndicator(_controller!, allowScrubbing: true),
+                          child: VideoProgressIndicator(
+                              _controller!, allowScrubbing: true),
                         ),
                         IconButton(
                           icon: Icon(
@@ -313,136 +932,339 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
                     ),
                   ),
                 ),
-              if (videoFile != null && (_controller == null || !_controller!.value.isInitialized))
+              if (videoFile != null && !_isVideoDeleted &&
+                  (_controller == null || !_controller!.value.isInitialized))
                 Text(
                   'Выбранное видео: ${videoFile!.name}',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Container(
-                  padding: EdgeInsets.all(16.0),
-                  decoration: BoxDecoration(
-                    color: Color(0xFFF48FB1),
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  child: TextFormField(
-                    maxLines: null,
-                    onChanged: (value) {
-                      setState(() {
-                        _taskText = value;
-                      });
-                    },
-                    style: TextStyle(color: Colors.black),
-                    decoration: InputDecoration(
-                      hintText: 'Текст задания',
-                      labelStyle: TextStyle(color: Colors.white),
-                      filled: true,
-                      fillColor: Colors.white,
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white),
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white),
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: TextFormField(
-                  onChanged: (value) {
+              if (!_isVideoDeleted)
+                ElevatedButton(
+                  onPressed: () {
                     setState(() {
-                      _testQuestion = value;
+                      _isVideoDeleted = true;
+                      _isNewVideoAdded = false;
+                      _controller?.dispose();
+                      videoFile = null;
                     });
                   },
-                  style: TextStyle(color: Colors.black),
-                  decoration: InputDecoration(
-                    labelText: 'Вопрос для теста',
-                    labelStyle: TextStyle(color: Colors.black),
-                    border: OutlineInputBorder(),
-                  ),
+                  child: Text('Удалить видео'),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: TextFormField(
-                  onChanged: (value) {
-                    setState(() {
-                      _correctAnswer = value;
-                    });
-                  },
-                  style: TextStyle(color: Colors.black),
-                  decoration: InputDecoration(
-                    labelText: 'Правильный ответ',
-                    labelStyle: TextStyle(color: Colors.black),
-                    border: OutlineInputBorder(),
-                  ),
+              if (_isVideoDeleted)
+                Text(
+                  'Видео удалено',
+                  style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                 ),
-              ),
-              ListView.builder(
-                shrinkWrap: true,
-                itemCount: _wrongAnswers.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            onChanged: (value) {
-                              setState(() {
-                                _wrongAnswers[index] = value;
-                              });
-                            },
-                            style: TextStyle(color: Colors.black),
-                            decoration: InputDecoration(
-                              labelText: 'Неправильный ответ',
-                              labelStyle: TextStyle(color: Colors.black),
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.delete),
-                          onPressed: () => _removeWrongAnswer(index),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-              ElevatedButton(
-                onPressed: _addWrongAnswer,
-                child: Text('Добавить неправильный ответ'),
-              ),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () async {
-                    if (_formKey.currentState?.validate() ?? false) {
-                      // Сначала отправляем текстовые данные
-                      await _sendTextToServer();
 
-                      // Затем отправляем видео, если оно выбрано
-                      await _sendVideoToServer();
-                    }
-                  },
-                  child: Text('Сохранить'),
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Color(0xFFF48FB1),
-                    padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 32.0),
-                    textStyle: TextStyle(fontSize: 16),
-                  ),
-                ),
-              ),
+              // Поле для текста задания
+              _buildTaskTextField(),
+              // Поле для вопроса теста
+              _buildTestQuestionField(),
+              // Поле для правильного ответа
+              _buildCorrectAnswerField(),
+              // Список неправильных ответов
+              _buildWrongAnswersList(),
+              // Кнопка для добавления неправильного ответа
+              _buildAddWrongAnswerButton(),
+              // Кнопка "Сохранить"
+              _buildSaveButton(context),
             ],
           ),
         ),
       ),
     );
   }
+
+// Метод для создания поля названия урока
+  Widget _buildLessonNameField() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Container(
+        padding: EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: Color(0xFFF48FB1),
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        child: TextFormField(
+          initialValue: _lessonName,
+          onChanged: (value) {
+            setState(() {
+              _lessonName = value;
+            });
+          },
+          style: TextStyle(color: Colors.black),
+          decoration: InputDecoration(
+            hintText: 'Название урока',
+            labelStyle: TextStyle(color: Colors.white),
+            filled: true,
+            fillColor: Colors.white,
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.white),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.white),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+// Метод для создания секции прикрепления видео
+  Widget _buildVideoAttachmentSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          Text('Прикрепите видео к уроку: '),
+          Spacer(),
+          IconButton(
+            icon: Icon(Icons.file_download),
+            color: Color(0xFFF48FB1),
+            onPressed: () async {
+              final file = await FilePicker.platform.pickFiles(
+                type: FileType.video,
+              );
+
+              if (file != null) {
+                setState(() {
+                  videoFile = file.files.first;
+                  _isNewVideoAdded = true;
+                  _isVideoDeleted = false;
+                });
+                await _initializeController();
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+// Метод для создания поля текста задания
+  Widget _buildTaskTextField() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Container(
+        padding: EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: Color(0xFFF48FB1),
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        child: TextFormField(
+          controller: _taskTextController,
+          maxLines: null,
+          onChanged: (value) {
+            setState(() {
+              _taskText = value;
+            });
+          },
+          style: TextStyle(color: Colors.black),
+          decoration: InputDecoration(
+            hintText: 'Текст задания',
+            labelStyle: TextStyle(color: Colors.white),
+            filled: true,
+            fillColor: Colors.white,
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.white),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.white),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+// Метод для создания поля вопроса теста
+  Widget _buildTestQuestionField() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        controller: _testQuestionController,
+        onChanged: (value) {
+          setState(() {
+            _testQuestion = value;
+          });
+        },
+        style: TextStyle(color: Colors.black),
+        decoration: InputDecoration(
+          labelText: 'Вопрос для теста',
+          labelStyle: TextStyle(color: Colors.black),
+          border: OutlineInputBorder(),
+        ),
+      ),
+    );
+  }
+
+// Метод для создания поля правильного ответа
+  Widget _buildCorrectAnswerField() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        controller: _correctAnswerController,
+        onChanged: (value) {
+          setState(() {
+            _correctAnswer = value;
+          });
+        },
+        style: TextStyle(color: Colors.black),
+        decoration: InputDecoration(
+          labelText: 'Правильный ответ',
+          labelStyle: TextStyle(color: Colors.black),
+          border: OutlineInputBorder(),
+        ),
+      ),
+    );
+  }
+
+// Метод для создания списка неправильных ответов
+  Widget _buildWrongAnswersList() {
+    return ListView.builder(
+      shrinkWrap: true,
+      itemCount: _wrongAnswers.length,
+      itemBuilder: (context, index) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  initialValue: _wrongAnswers[index],
+                  onChanged: (value) {
+                    setState(() {
+                      _wrongAnswers[index] = value;
+                    });
+                  },
+                  style: TextStyle(color: Colors.black),
+                  decoration: InputDecoration(
+                    labelText: 'Неправильный ответ',
+                    labelStyle: TextStyle(color: Colors.black),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: Icon(Icons.delete),
+                onPressed: () async {
+                  _removeWrongAnswer(index);
+                  _deleteAnswer(index);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+// Метод для создания кнопки добавления неправильного ответа
+  Widget _buildAddWrongAnswerButton() {
+    return ElevatedButton(
+      onPressed: _addWrongAnswer,
+      child: Text('Добавить неправильный ответ'),
+    );
+  }
+
+// Метод для создания кнопки "Сохранить"
+  Widget _buildSaveButton(BuildContext context) {
+    return Center(
+      child: ElevatedButton(
+        onPressed: () async {
+          await _handleSave(context);
+        },
+        child: Text('Сохранить'),
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.white,
+          backgroundColor: Color(0xFFF48FB1),
+          padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 32.0),
+          textStyle: TextStyle(fontSize: 16),
+        ),
+      ),
+    );
+  }
+
+// Новый метод для обработки сохранения
+  Future<void> _handleSave(BuildContext context) async {
+    if (_formKey.currentState?.validate() ?? false) {
+      // Сохранение названия урока
+      if (_lessonName.isNotEmpty) {
+        await _updateLessonName();
+      }
+
+      // Сохранение текстовых данных
+      if (_initialTaskText.isEmpty && _taskText.isNotEmpty) {
+        await _sendTextToServer();
+      } else if (_taskText != _initialTaskText) {
+        if (_taskText.isEmpty) {
+          await _deleteTextData(_contentId!);
+        } else {
+          await _updateTextData();
+        }
+      }
+
+      // Отправка видео на сервер, если оно выбрано
+      if (_isNewVideoAdded && videoFile != null) {
+        if (_videoPath.isNotEmpty) {
+          // Если существует предыдущее видео, удалите его
+          await _deleteVideoFromServer(_contentId!);
+        }
+        // Отправка нового видео на сервер
+        await _sendVideoToServer();
+      } else if (_isVideoDeleted) {
+        // Удаление видео с сервера
+        await _deleteVideoFromServer(_contentId!);
+      }
+
+      if (_initialQuestionText.isEmpty && _testQuestion.isNotEmpty) {
+        await _sendQuestionToServer();
+      } else if (_testQuestion != _initialQuestionText) {
+        if (_testQuestion.isEmpty) {
+          await _deleteQuestionData(_contentId!);
+        } else {
+          await _updateQuestionData();
+        }
+      }
+
+      if (_initialCorrectAnswer.isEmpty && _correctAnswer.isEmpty) {
+        await _sendCorrectAnswerToServer();
+      } else if (_correctAnswer != _initialCorrectAnswer) {
+        // if (_correctAnswer.isEmpty) {
+        //   await _deleteAnswer(_contentId!);
+        // } else {
+        //   await _updateAnswer();
+        // }
+        await _updateCorrectAnswer();
+      }
+
+      for (int i = 0; i < _wrongAnswers.length; i++) {
+        if (_wrongAnswers[i] != _answerListObjects[i]['text']) {
+          await _updateWrongAnswer(i, _wrongAnswers[i]);
+        }
+      }
+
+
+      // Переход к следующей странице
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CreateLessonPage(
+            courseSlug: widget.courseSlug,
+            courseDescription: widget.courseDescription,
+            courseAbout: widget.courseAbout,
+            moduleIndex: widget.moduleIndex,
+            moduleName: widget.moduleName,
+            moduleId: widget.moduleId,
+          ),
+        ),
+      );
+    }
+  }
+
+
 }
