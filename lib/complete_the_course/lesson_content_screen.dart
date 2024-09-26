@@ -1,10 +1,21 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'course_details_screen.dart';
+import 'package:http/http.dart' as http;
 
 class LessonContentScreen extends StatefulWidget {
   final Lesson lesson;
+  final String courseSlug;
+  final int moduleId;
+  final int lessonId;
 
-  LessonContentScreen({required this.lesson});
+  LessonContentScreen({required this.lesson,
+    required this.courseSlug,
+    required this.moduleId,
+    required this.lessonId,
+  });
 
   @override
   _LessonContentScreenState createState() => _LessonContentScreenState();
@@ -12,6 +23,51 @@ class LessonContentScreen extends StatefulWidget {
 
 class _LessonContentScreenState extends State<LessonContentScreen> {
   int _currentStep = 0;
+  dynamic _lessonData;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPreferences(); // Загружаем данные при инициализации
+  }
+
+  Future<void> _loadPreferences() async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? sessionid = prefs.getString('sessionid');
+      String? csrfToken = prefs.getString('csrftoken');
+      final Map<String, String> headers = {};
+
+      if (sessionid != null && csrfToken != null) {
+        headers['Cookie'] = 'sessionid=$sessionid; csrftoken=$csrfToken';
+        headers['X-CSRFToken'] = csrfToken;
+      }
+
+      final url = 'http://80.90.187.60:8001/api/mycourses/${widget
+          .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/';
+      final response = await http.get(
+          Uri.parse(url),
+          headers: headers
+      );
+
+      if (response.statusCode == 200) {
+        final rawData = utf8.decode(response.bodyBytes);
+        final data = jsonDecode(rawData);
+        // print('Decoded data: $data');
+        setState(() {
+          _lessonData = data;
+        });
+        print("Initial $_lessonData");
+
+      } else {
+        print('Cant load to lesson data. Status code: ${response.statusCode}');
+        print('Body: ${response.body}');
+      }
+    } catch (e) {
+      print('Error to process load lesson data: $e');
+    }
+
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +107,24 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
   }
 
   Widget _buildStepContent() {
+    if (_lessonData == null) {
+      return Center(child: CircularProgressIndicator()); // Индикатор загрузки
+    }
+
+    final contents = _lessonData['contents'];
+
+    for (var content in contents) {
+      // print(content.runtimeType);
+      // print(content);
+      // print('');
+
+      if (content.containsKey('text_content')) {
+        print('text');
+      }
+
+
+    }
+
     switch (_currentStep) {
       case 0:
         return _buildVideoStep();

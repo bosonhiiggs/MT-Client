@@ -77,6 +77,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
   TextEditingController _testQuestionController = TextEditingController();
   TextEditingController _correctAnswerController = TextEditingController();
   int? _contentId;
+  int? _questionId;
 
   @override
   void initState() {
@@ -199,6 +200,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
             _testQuestionController.text = _testQuestion;
             _initialQuestionText = _testQuestion;
             _contentId = contentId;
+            _questionId = contentData['id'];
           });
         }
 
@@ -609,7 +611,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
     }
   }
 
-  Future<void> _sendCorrectAnswerToServer() async {
+  Future<void> _sendCorrectAnswerToServer(questionId) async {
     print("send correct answer");
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -629,8 +631,9 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
         .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/answer/';
 
     final requestBody = {
+      "question": questionId,
       "title": "${widget.courseSlug}${widget.moduleId}-${widget.lessonId}answer",
-      "text": _taskText,
+      "text": _correctAnswer,
       "is_true": true
     };
 
@@ -654,8 +657,51 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
 
   }
 
-  Future<void> _sendUnCorrectAnswerToServer() async {
+  Future<void> _sendUnCorrectAnswerToServer(String answer, int questionId) async {
     print("send uncorrect answer");
+    // print(answer);
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final sessionId = prefs.getString('sessionid');
+    final csrfToken = prefs.getString('csrftoken');
+
+    final Map<String, String> headers = {
+      'Content-Type': 'application/json',
+    };
+
+    if (sessionId != null && csrfToken != null) {
+      headers['Cookie'] = 'sessionid=$sessionId; csrftoken=$csrfToken';
+      headers['X-CSRFToken'] = csrfToken;
+    }
+
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget
+        .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/answer/';
+
+    final requestBody = {
+      "question": questionId,
+      "title": "${widget.courseSlug}${widget.moduleId}-${widget.lessonId}answer",
+      "text": answer,
+      "is_true": false
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: headers,
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 201) {
+        print('Answer data sent successfully');
+      } else {
+        final responseBody = utf8.decode(response.bodyBytes);
+        print('Failed to send asnwer data: ${response.statusCode}');
+        print('Response body: ${responseBody}');
+      }
+    } catch (e) {
+      print('Error sending answer data: $e');
+    }
+
 
   }
 
@@ -1231,8 +1277,8 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
         }
       }
 
-      if (_initialCorrectAnswer.isEmpty && _correctAnswer.isEmpty) {
-        await _sendCorrectAnswerToServer();
+      if (_initialCorrectAnswer.isEmpty && _correctAnswer.isNotEmpty) {
+        await _sendCorrectAnswerToServer(_questionId!);
       } else if (_correctAnswer != _initialCorrectAnswer) {
         // if (_correctAnswer.isEmpty) {
         //   await _deleteAnswer(_contentId!);
@@ -1242,10 +1288,16 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
         await _updateCorrectAnswer();
       }
 
+      // for (int i = 0; i < _wrongAnswers.length; i++) {
+      //   if (_wrongAnswers[i] != _answerListObjects[i]['text']) {
+      //     await _updateWrongAnswer(i, _wrongAnswers[i]);
+      //   }
+      // }
+
+      print(_wrongAnswers);
       for (int i = 0; i < _wrongAnswers.length; i++) {
-        if (_wrongAnswers[i] != _answerListObjects[i]['text']) {
-          await _updateWrongAnswer(i, _wrongAnswers[i]);
-        }
+        // print(_wrongAnswers[i]);
+        await _sendUnCorrectAnswerToServer(_wrongAnswers[i], _questionId!);
       }
 
 

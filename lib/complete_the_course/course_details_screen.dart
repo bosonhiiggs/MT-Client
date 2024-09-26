@@ -27,6 +27,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   bool _isLoading = true;
   String _userFirstName = '';
   String _userLastName = '';
+  String _courseSlug = '';
 
   @override
   void initState() {
@@ -82,6 +83,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         setState(() {
           _modules = modules;
           _isLoading = false;
+          _courseSlug = widget.course.slug;
         });
         print('Modules fetched successfully: $_modules');
       } else {
@@ -368,7 +370,8 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
             itemBuilder: (context, index) {
               final module = _modules[index];
               print('Building module: ${module.title} with ${module.lessons.length} lessons');
-              return ModuleTile(module: module, moduleIndex: index + 1);
+              // print(_courseSlug);
+              return ModuleTile(module: module, moduleIndex: index + 1, courseSlug: _courseSlug);
             },
           ),
       ],
@@ -460,8 +463,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
 class ModuleTile extends StatefulWidget {
   final Module module;
   final int moduleIndex;
+  final String courseSlug;
 
-  ModuleTile({required this.module, required this.moduleIndex});
+  ModuleTile({required this.module, required this.courseSlug, required this.moduleIndex});
 
   @override
   _ModuleTileState createState() => _ModuleTileState();
@@ -522,7 +526,11 @@ class _ModuleTileState extends State<ModuleTile> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => LessonContentScreen(lesson: lesson),
+                        builder: (context) => LessonContentScreen(lesson: lesson,
+                          courseSlug: widget.courseSlug,
+                          moduleId: widget.module.id,
+                          lessonId: lesson.id,
+                        ),
                       ),
                     );
                   },
@@ -552,14 +560,21 @@ class _ModuleTileState extends State<ModuleTile> {
 class Module {
   final int id;
   final String title;
+  // final String courseSlug;
   final List<Lesson> lessons;
 
-  Module({required this.id, required this.title, required this.lessons});
+  Module({
+    required this.id,
+    required this.title,
+    // required this.courseSlug,
+    required this.lessons
+});
 
   factory Module.fromJson(Map<String, dynamic> json) {
     return Module(
       id: json['id'] ?? 0,
       title: json['title'] ?? '',
+      // courseSlug: json['course_slug'],
       lessons: [],
     );
   }
