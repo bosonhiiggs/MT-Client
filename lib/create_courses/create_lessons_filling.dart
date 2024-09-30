@@ -819,7 +819,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       } else {
         final responseBody = utf8.decode(response.bodyBytes);
         print('Failed to update answer data: ${response.statusCode}');
-        print('Response body: $responseBody');
+        // print('Response body: $responseBody');
       }
     } catch (e) {
       print('Error updating answer data: $e');
@@ -828,7 +828,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
 
   Future<void> updateAllWrongAnswers() async {
     for (int i = 0; i < _wrongAnswers.length; i++) {
-      final answerId = _answerListObjects[i]['id'];
+      // final answerId = _answerListObjects[i]['id'];
       final answerText = _wrongAnswers[i];
 
       // Если ответ пустой, пропускаем его
@@ -898,19 +898,21 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
     } else {
         setState(() {
           _wrongAnswers.add('');
+          _answerListObjects.add({});
+          _controllers.add(TextEditingController());
         });
       }
   }
 
-  void _removeWrongAnswer(int index) {
-    print("Индекс в _removeWrongAnswer: $index");
-    setState(() {
-      if (_wrongAnswers.length >= 1) {
-        _wrongAnswers.removeAt(index);
-        _answerListObjects.removeAt(index);
-      }
-    });
-  }
+  // void _removeWrongAnswer(int index) {
+  //   print("Индекс в _removeWrongAnswer: $index");
+  //   setState(() {
+  //     if (_wrongAnswers.length >= 1) {
+  //       _wrongAnswers.removeAt(index);
+  //       _answerListObjects.removeAt(index);
+  //     }
+  //   });
+  // }
 
   void _showLimitREachedDialog() {
     showDialog(
