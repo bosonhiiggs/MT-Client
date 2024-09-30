@@ -94,7 +94,10 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
   dynamic _lessonData;
   String? _theoryContent;
   String? _fileContent;
+  String? _questionText;
+  List<dynamic> _testAnswers = [];
   VideoPlayerController? _controller;
+  int? _selectedAnswerIndex;
 
   List<Map<String, dynamic>> _steps = [];
 
@@ -209,7 +212,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
     for (var step in _steps) {
       if (step['type'] == 'file') {
         print('type: ${step['type']}; id: ${step['id']}');
-        await _loadFileContent(step['id']);
+        // await _loadFileContent(step['id']);
 
       } else if (step['type'] == 'text') {
         print('type: ${step['type']}; id: ${step['id']}');
@@ -217,6 +220,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
 
       } else if (step['type'] == 'question') {
         print('type: ${step['type']}; id: ${step['id']}');
+        await _loadTestContent(step['id']);
 
       }
     }
@@ -224,20 +228,6 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
     setState(() {});
 
   }
-
-  // Future<void> _findTextContent() async {
-  //   if (_lessonData == null) return;
-  //
-  //   final contents = _lessonData['contents'];
-  //
-  //   for (var content in contents) {
-  //     if (content.containsKey('text_content')) {
-  //       print('text found');
-  //       await _loadTheoryContent(content['id']);
-  //       break;
-  //     }
-  //   }
-  // }
 
   Future<void> _loadFileContent(int contentId) async {
     try {
@@ -299,6 +289,38 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
           _theoryContent = data['item']['content'];
         });
         // print(_theoryContent);
+      } else {
+        print('Failed to load Theory Text');
+        print('Response code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error to load theory: $e');
+    }
+  }
+
+  Future<void> _loadTestContent(int contentId) async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? sessionid = prefs.getString('sessionid');
+      String? csrfToken = prefs.getString('csrftoken');
+
+      final Map<String, String> headers = {};
+
+      if (sessionid != null && csrfToken != null) {
+        headers['Cookie'] = 'sessionid=$sessionid; csrftoken=$csrfToken';
+        headers['X-CSRFToken'] = csrfToken;
+      }
+
+      final url = 'http://80.90.187.60:8001/api/mycourses/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/';
+      final response = await http.get(Uri.parse(url), headers: headers);
+
+      if (response.statusCode == 200) {
+        final rawData = utf8.decode(response.bodyBytes);
+        final data = jsonDecode(rawData);
+        setState(() {
+          _questionText = data['item']['text'];
+          _testAnswers = data['item']['answers'];
+        });
       } else {
         print('Failed to load Theory Text');
         print('Response code: ${response.statusCode}');
@@ -372,10 +394,11 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
       case 'text':
         print('Step text: ${currentStepData['data']}');
         return _buildTheoryStep();
-      // case 'question':
-      //   print('Step question: ${currentStepData['data']}');
-      //   return null;
-      //   return _buildTestStep(currentStepData['data']);
+      case 'question':
+        print('Step question: ${currentStepData['data']}');
+        print(_questionText);
+        print(_testAnswers);
+        return _buildTestStep();
       default:
         return Container();
     }
@@ -490,17 +513,65 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
     );
   }
 
-  Widget _buildTestStep(String questionData) {
-    return Column(
-      children: [
-        AppBar(
-          title: Text('Тест'),
-          automaticallyImplyLeading: false,
-          centerTitle: true,
-        ),
-        // Здесь вы можете добавить виджет для отображения теста
-        Text('Тестовый контент: $questionData'),
-      ],
+  Widget _buildTestStep() {
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AppBar(
+            title: Text('Тест'),
+            automaticallyImplyLeading: false,
+            centerTitle: true,
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Тестовый вопрос: $_questionText',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 20),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: _testAnswers.length,
+                  itemBuilder: (context, index) {
+                    final answer = _testAnswers[index];
+                    bool isCorrect = answer['is_true']; // Предположим, у вас есть эта информация
+                    bool isSelected = _selectedAnswerIndex == index;
+
+                    return Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          setState(() {
+                            _selectedAnswerIndex = index;
+                          });
+                        },
+                        splashColor: Colors.transparent, // Убираем цвет всплеска
+                        highlightColor: Colors.transparent,
+                        child: Card(
+                          elevation: 4,
+                          margin: const EdgeInsets.symmetric(vertical: 8.0),
+                          color: isSelected
+                              ? (isCorrect ? Colors.green : Colors.red)
+                              : Colors.white, // Цвет по умолчанию
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Text(answer['text']),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
