@@ -199,25 +199,25 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
         final contentData = jsonDecode(rawData);
         // print('Content data: $contentData');
         
-        // if (typeObject == 'text') {
-        //   // print('text');
-        //   setState(() {
-        //     _taskText = contentData['content'];
-        //     _taskTextController.text = _taskText;
-        //     _initialTaskText = _taskText;
-        //     _contentId = contentId;
-        //   });
-        // }
-        //
-        // if (typeObject == 'file') {
-        //   // print('file');
-        //   setState(() {
-        //     String videoUrl = "http://80.90.187.60:8001${contentData['file']}";
-        //     _videoPath = videoUrl;
-        //     _contentId = contentId;
-        //   });
-        //   await _initializeVideoController(_videoPath);
-        // }
+        if (typeObject == 'text') {
+          // print('text');
+          setState(() {
+            _taskText = contentData['content'];
+            _taskTextController.text = _taskText;
+            _initialTaskText = _taskText;
+            _contentId = contentId;
+          });
+        }
+
+        if (typeObject == 'file') {
+          // print('file');
+          setState(() {
+            String videoUrl = "http://80.90.187.60:8001${contentData['file']}";
+            _videoPath = videoUrl;
+            _contentId = contentId;
+          });
+          await _initializeVideoController(_videoPath);
+        }
 
         if (typeObject == 'question') {
           // print('question');
