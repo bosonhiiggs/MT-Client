@@ -1,7 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:video_player/video_player.dart';
 import 'course_details_screen.dart';
 import 'package:http/http.dart' as http;
 
@@ -21,14 +23,68 @@ class LessonContentScreen extends StatefulWidget {
   _LessonContentScreenState createState() => _LessonContentScreenState();
 }
 
+class FullScreenVideoPlayer extends StatelessWidget {
+  final VideoPlayerController controller;
+
+  FullScreenVideoPlayer({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black, // Устанавливаем черный фон
+      body: Center(
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            VideoPlayer(controller),
+            IconButton(
+              icon: Icon(
+                Icons.fullscreen_exit, // Иконка выхода из полного экрана
+                color: Colors.white,
+                size: 30,
+              ),
+              onPressed: () {
+                Navigator.of(context).pop(); // Возврат из полного экрана
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _LessonContentScreenState extends State<LessonContentScreen> {
   int _currentStep = 0;
   dynamic _lessonData;
+  String? _theoryContent;
+  String? _fileContent;
+  VideoPlayerController? _controller;
+
+  List<Map<String, dynamic>> _steps = [];
 
   @override
   void initState() {
     super.initState();
     _loadPreferences(); // Загружаем данные при инициализации
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  Future<void> _initializeVideoController(String videoUrl) async {
+    _controller = VideoPlayerController.networkUrl(Uri.parse(
+      "http://80.90.187.60:8001/${videoUrl}"
+    ));
+    try {
+      await _controller!.initialize();
+      setState(() {});
+      _controller?.play();
+    } catch (e) {
+      print("Error $e");
+    }
   }
 
   Future<void> _loadPreferences() async {
@@ -58,6 +114,8 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
           _lessonData = data;
         });
         print("Initial $_lessonData");
+        // _findTextContent();
+        _generateSteps();
 
       } else {
         print('Cant load to lesson data. Status code: ${response.statusCode}');
@@ -69,6 +127,158 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
 
   }
 
+  Future<void> _generateSteps() async {
+    if (_lessonData == null) return;
+
+    final contents = _lessonData['contents'];
+
+    for (var content in contents) {
+      if (content.containsKey('file_content')) {
+        _steps.add({
+          'type': 'file',
+          'id': content['id'],
+        });
+      }
+      if (content.containsKey('text_content')) {
+        _steps.add({
+          'type': 'text',
+          'id': content['id'],
+        });
+      }
+      if (content.containsKey('question_content')) {
+        _steps.add({
+          'type': 'question',
+          'id': content['id'],
+        });
+      }
+    }
+
+    _steps.sort((a, b) {
+      if (a['type'] == 'file' && b['type'] != 'file') return -1; // Видео вперед
+      if (a['type'] != 'file' && b['type'] == 'file') return 1;  // Если b - видео, оно впереди
+
+      if (a['type'] == 'text' && b['type'] != 'text') return -1; // Теория после видео
+      if (a['type'] != 'text' && b['type'] == 'text') return 1;  // Если b - теория, оно впереди
+
+      if (a['type'] == 'question') return 1;  // Тесты всегда последние
+      if (b['type'] == 'question') return -1; // Если b - тест, оно позади
+
+      return 0;
+    });
+
+
+    for (var step in _steps) {
+      if (step['type'] == 'file') {
+        print('type: ${step['type']}; id: ${step['id']}');
+        await _loadFileContent(step['id']);
+
+      } else if (step['type'] == 'text') {
+        print('type: ${step['type']}; id: ${step['id']}');
+        await _loadTheoryContent(step['id']);
+
+      } else if (step['type'] == 'question') {
+        print('type: ${step['type']}; id: ${step['id']}');
+
+      }
+    }
+
+    setState(() {});
+
+  }
+
+  // Future<void> _findTextContent() async {
+  //   if (_lessonData == null) return;
+  //
+  //   final contents = _lessonData['contents'];
+  //
+  //   for (var content in contents) {
+  //     if (content.containsKey('text_content')) {
+  //       print('text found');
+  //       await _loadTheoryContent(content['id']);
+  //       break;
+  //     }
+  //   }
+  // }
+
+  Future<void> _loadFileContent(int contentId) async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? sessionid = prefs.getString('sessionid');
+      String? csrfToken = prefs.getString('csrftoken');
+
+      final Map<String, String> headers = {};
+
+      if (sessionid != null && csrfToken != null) {
+        headers['Cookie'] = 'sessionid=$sessionid; csrftoken=$csrfToken';
+        headers['X-CSRFToken'] = csrfToken;
+      }
+
+      final url = 'http://80.90.187.60:8001/api/mycourses/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/';
+      final response = await http.get(Uri.parse(url), headers: headers);
+
+      if (response.statusCode == 200) {
+        final rawData = utf8.decode(response.bodyBytes);
+        final data = jsonDecode(rawData);
+        setState(() {
+          _fileContent = data['item']['file'];
+        });
+        print("FIleCOntent: ${_fileContent}");
+        if (_fileContent != null) {
+          await _initializeVideoController(_fileContent!);
+        } else {
+          print('File content is null');
+        }
+      } else {
+        print('Failed to load file content');
+        print('Response code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error to load file: $e');
+    }
+  }
+
+  Future<void> _loadTheoryContent(int contentId) async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? sessionid = prefs.getString('sessionid');
+      String? csrfToken = prefs.getString('csrftoken');
+
+      final Map<String, String> headers = {};
+
+      if (sessionid != null && csrfToken != null) {
+        headers['Cookie'] = 'sessionid=$sessionid; csrftoken=$csrfToken';
+        headers['X-CSRFToken'] = csrfToken;
+      }
+
+      final url = 'http://80.90.187.60:8001/api/mycourses/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/';
+      final response = await http.get(Uri.parse(url), headers: headers);
+
+      if (response.statusCode == 200) {
+        final rawData = utf8.decode(response.bodyBytes);
+        final data = jsonDecode(rawData);
+        setState(() {
+          _theoryContent = data['item']['content'];
+        });
+        // print(_theoryContent);
+      } else {
+        print('Failed to load Theory Text');
+        print('Response code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error to load theory: $e');
+    }
+  }
+
+  void _enterFullScreen() {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.leanBack);
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => FullScreenVideoPlayer(controller: _controller!),
+      ));
+  }
+
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -78,7 +288,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
         backgroundColor: Color(0xFFF48FB1),
         actions: [
           Row(
-            children: List.generate(4, (index) {
+            children: List.generate(_steps.length, (index) {
               return Container(
                 margin: EdgeInsets.symmetric(horizontal: 4.0),
                 width: 20,
@@ -111,32 +321,52 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
       return Center(child: CircularProgressIndicator()); // Индикатор загрузки
     }
 
-    final contents = _lessonData['contents'];
-
-    for (var content in contents) {
-      // print(content.runtimeType);
-      // print(content);
-      // print('');
-
-      if (content.containsKey('text_content')) {
-        print('text');
-      }
-
-
+    if (_steps.isEmpty) {
+      return Center(child: CircularProgressIndicator());
     }
 
-    switch (_currentStep) {
-      case 0:
+    final currentStepData = _steps[_currentStep];
+
+    switch (currentStepData['type']) {
+      case 'file':
         return _buildVideoStep();
-      case 1:
+      case 'text':
+        print('Step text: ${currentStepData['data']}');
         return _buildTheoryStep();
-      case 2:
-        return _buildTestStep();
-      case 3:
-        return _buildHomeworkStep();
+      // case 'question':
+      //   print('Step question: ${currentStepData['data']}');
+      //   return null;
+      //   return _buildTestStep(currentStepData['data']);
       default:
         return Container();
     }
+
+    // final contents = _lessonData['contents'];
+    //
+    // for (var content in contents) {
+    //   // print(content.runtimeType);
+    //   // print(content);
+    //   // print('');
+    //
+    //   if (content.containsKey('text_content')) {
+    //     print('text');
+    //   }
+    //
+    //
+    // }
+
+    // switch (_currentStep) {
+    //   case 0:
+    //     return _buildVideoStep();
+    //   case 1:
+    //     return _buildTheoryStep();
+    //   case 2:
+    //     return _buildTestStep();
+    //   case 3:
+    //     return _buildHomeworkStep();
+    //   default:
+    //     return Container();
+    // }
   }
 
   Widget _buildVideoStep() {
@@ -147,8 +377,59 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
           automaticallyImplyLeading: false,
           centerTitle: true,
         ),
-        // Здесь вы можете добавить виджет для отображения видео
-        Text('Видео контент'),
+
+        if (_controller != null && _controller!.value.isInitialized)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Container(
+              height: 300,
+              width: double.infinity,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  VideoPlayer(_controller!),
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: VideoProgressIndicator(
+                      _controller!, allowScrubbing: true,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      _controller!.value.isPlaying
+                          ? Icons.pause
+                          : Icons.play_arrow,
+                      color: Colors.white,
+                      size: 40,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _controller!.value.isPlaying
+                            ? _controller!.pause()
+                            : _controller!.play();
+                      });
+                    },
+                  ),
+                  Positioned(
+                    bottom: 10,
+                    right: 10,
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.fullscreen,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                      onPressed: () {
+                        _enterFullScreen();
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          CircularProgressIndicator(),
       ],
     );
   }
@@ -162,12 +443,15 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
           centerTitle: true,
         ),
         // Здесь вы можете добавить виджет для отображения теории
-        Text('Теоретический контент'),
+        // Text('Теоретический контент'),
+        _theoryContent != null
+            ? Text(_theoryContent!)
+            : CircularProgressIndicator(),
       ],
     );
   }
 
-  Widget _buildTestStep() {
+  Widget _buildTestStep(String questionData) {
     return Column(
       children: [
         AppBar(
@@ -176,7 +460,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
           centerTitle: true,
         ),
         // Здесь вы можете добавить виджет для отображения теста
-        Text('Тестовый контент'),
+        Text('Тестовый контент: $questionData'),
       ],
     );
   }
@@ -229,7 +513,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
             ),
           ),
         Spacer(), // Добавляем Spacer для создания пространства между кнопками
-        if (_currentStep < 3)
+        if (_currentStep < _steps.length - 1)
           ElevatedButton(
             onPressed: () {
               setState(() {
@@ -245,7 +529,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
               ),
             ),
           ),
-        if (_currentStep == 3)
+        if (_currentStep == _steps.length - 1)
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);

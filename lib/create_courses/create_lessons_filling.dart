@@ -29,6 +29,14 @@ class LessonData {
   });
 }
 
+class Answer {
+  final int id;
+  final String text;
+  final bool isTrue;
+
+  Answer({required this.id, required this.text, required this.isTrue});
+}
+
 class CreateLessonPage2 extends StatefulWidget {
   final String courseSlug;
   final String courseDescription;
@@ -76,6 +84,10 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
   TextEditingController _taskTextController = TextEditingController();
   TextEditingController _testQuestionController = TextEditingController();
   TextEditingController _correctAnswerController = TextEditingController();
+  // TextEditingController _wrongAnswerController = TextEditingController();
+
+  List<TextEditingController> _controllers = [];
+
   int? _contentId;
   int? _questionId;
 
@@ -85,16 +97,31 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
     _lessonName = widget.lessonName;
     _taskTextController.text = _taskText;
     _fetchLessonData();
+    // print("InitState _wrongAnswers: $_wrongAnswers");
   }
 
   @override
   void dispose() {
+    for (var controller in _controllers) {
+      controller.dispose();
+    }
     _controller?.dispose();
     super.dispose();
   }
 
+  // void parseData(Map<String, dynamic> data) {
+  //   var answers = data['answers'] as List<dynamic>;
+  //   _wrongAnswers = answers.where((answer) => !answer['is_true']).map((answer) {
+  //     return Answer(
+  //       id: answer['id'],
+  //       text: answer['text'],
+  //       isTrue: answer['is_true'],
+  //     );
+  //   }).toList();
+  // }
+
   Future<void> _initializeVideoController(String videoUrl) async {
-    print(videoUrl);
+    // print(videoUrl);
     _controller = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
     try {
       await _controller!.initialize();
@@ -127,7 +154,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       if (response.statusCode == 200) {
         final rawData = utf8.decode(response.bodyBytes);
         final data = jsonDecode(rawData);
-        print('Decoded data: $data');
+        // print('Decoded data: $data');
 
         List<dynamic> contents = data['contents'];
         for (var content in contents) {
@@ -170,30 +197,30 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       if (response.statusCode == 200) {
         final rawData = utf8.decode(response.bodyBytes);
         final contentData = jsonDecode(rawData);
-        print('Content data: $contentData');
+        // print('Content data: $contentData');
         
-        if (typeObject == 'text') {
-          print('text');
-          setState(() {
-            _taskText = contentData['content'];
-            _taskTextController.text = _taskText;
-            _initialTaskText = _taskText;
-            _contentId = contentId;
-          });
-        }
-
-        if (typeObject == 'file') {
-          print('file');
-          setState(() {
-            String videoUrl = "http://80.90.187.60:8001${contentData['file']}";
-            _videoPath = videoUrl;
-            _contentId = contentId;
-          });
-          await _initializeVideoController(_videoPath);
-        }
+        // if (typeObject == 'text') {
+        //   // print('text');
+        //   setState(() {
+        //     _taskText = contentData['content'];
+        //     _taskTextController.text = _taskText;
+        //     _initialTaskText = _taskText;
+        //     _contentId = contentId;
+        //   });
+        // }
+        //
+        // if (typeObject == 'file') {
+        //   // print('file');
+        //   setState(() {
+        //     String videoUrl = "http://80.90.187.60:8001${contentData['file']}";
+        //     _videoPath = videoUrl;
+        //     _contentId = contentId;
+        //   });
+        //   await _initializeVideoController(_videoPath);
+        // }
 
         if (typeObject == 'question') {
-          print('question');
+          // print('question');
           await _parseAnswers(contentId, contentData['answers']);
           setState(() {
             _testQuestion = contentData['text'];
@@ -202,6 +229,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
             _contentId = contentId;
             _questionId = contentData['id'];
           });
+          _controllers = List.generate(_wrongAnswers.length, (index) => TextEditingController(text: _wrongAnswers[index]));
         }
 
       } else {
@@ -215,6 +243,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
 
   Future<void> _parseAnswers (int questionId, List<dynamic> answers) async {
     List<String> wrongAnswers = [];
+    List<dynamic> answerListObjects = [];
     for (var answer in answers) {
 
       if (answer['is_true'] == true) {
@@ -226,13 +255,13 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
         });
       } else if (answer['is_true'] == false) {
         wrongAnswers.add(answer['text']);
-        _answerListObjects.add(answer);
+        answerListObjects.add(answer);
       }
-
     }
 
     setState(() {
       _wrongAnswers = wrongAnswers;
+      _answerListObjects = answerListObjects;
     });
 
   }
@@ -363,6 +392,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
 
       if (response.statusCode == 204) {
         print('Text data was successfully deleted');
+        _fetchLessonData();
       } else {
         print('Failed to delete text data: ${response.statusCode}');
       }
@@ -771,11 +801,10 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       headers['X-CSRFToken'] = csrfToken;
     }
 
-    final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget
-        .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/answer/${answerId}';
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/answer/${answerId}';
 
     final requestBody = {
-      "text": answerText
+      "text": answerText,
     };
 
     try {
@@ -786,70 +815,46 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       );
 
       if (response.statusCode == 200) {
-        print('Answer data update successfully');
+        print('Answer data update successfully for ID: $answerId');
       } else {
         final responseBody = utf8.decode(response.bodyBytes);
         print('Failed to update answer data: ${response.statusCode}');
-        print('Response body: ${responseBody}');
+        print('Response body: $responseBody');
       }
     } catch (e) {
       print('Error updating answer data: $e');
     }
+  }
 
-    List<Map<String, dynamic>> updateAnswer =[];
-
+  Future<void> updateAllWrongAnswers() async {
     for (int i = 0; i < _wrongAnswers.length; i++) {
       final answerId = _answerListObjects[i]['id'];
       final answerText = _wrongAnswers[i];
-      print(answerId);
-      print(answerText);
 
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      final sessionId = prefs.getString('sessionid');
-      final csrfToken = prefs.getString('csrftoken');
-
-      final Map<String, String> headers = {
-        'Content-Type': 'application/json',
-      };
-
-      if (sessionId != null && csrfToken != null) {
-        headers['Cookie'] = 'sessionid=$sessionId; csrftoken=$csrfToken';
-        headers['X-CSRFToken'] = csrfToken;
+      // Если ответ пустой, пропускаем его
+      if (answerText.isEmpty) {
+        continue;
       }
 
-      final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget
-          .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/answer/${answerId}';
-
-      final requestBody = {
-        "text": answerText
-      };
-
-      try {
-        final response = await http.patch(
-          Uri.parse(url),
-          headers: headers,
-          body: jsonEncode(requestBody),
-        );
-
-        if (response.statusCode == 200) {
-          print('Answer data update successfully');
-        } else {
-          final responseBody = utf8.decode(response.bodyBytes);
-          print('Failed to update asnwer data: ${response.statusCode}');
-          print('Response body: ${responseBody}');
-        }
-      } catch (e) {
-        print('Error delete answer data: $e');
+      // Обновление существующего ответа
+      if (_answerListObjects[i]['text'] != answerText) {
+        await _updateWrongAnswer(i, answerText);
       }
-
     }
 
+    // Добавление новых ответов
+    for (String answerText in _wrongAnswers) {
+      if (!_answerListObjects.any((answer) => answer['text'] == answerText)) {
+        await _sendUnCorrectAnswerToServer(answerText, _questionId!);
+      }
+    }
   }
 
   Future<void> _deleteAnswer(answerIndex) async {
     print("ID for delete: ${answerIndex}");
-    final answer = _answerListObjects[answerIndex];
-    final answerForDeleteId = answer['id'];
+    // final answer = _answerListObjects[answerIndex];
+    // final answerForDeleteId = answer['id'];
+    final answerForDeleteId = answerIndex;
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
     final sessionId = prefs.getString('sessionid');
@@ -875,6 +880,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
 
       if (response.statusCode == 204) {
         print('Answer data delete successfully');
+        // _fetchLessonData();
       } else {
         final responseBody = utf8.decode(response.bodyBytes);
         print('Failed to delete asnwer data: ${response.statusCode}');
@@ -897,9 +903,11 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
   }
 
   void _removeWrongAnswer(int index) {
+    print("Индекс в _removeWrongAnswer: $index");
     setState(() {
       if (_wrongAnswers.length >= 1) {
         _wrongAnswers.removeAt(index);
+        _answerListObjects.removeAt(index);
       }
     });
   }
@@ -1171,41 +1179,63 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
 
 // Метод для создания списка неправильных ответов
   Widget _buildWrongAnswersList() {
-    return ListView.builder(
-      shrinkWrap: true,
-      itemCount: _wrongAnswers.length,
-      itemBuilder: (context, index) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextFormField(
-                  initialValue: _wrongAnswers[index],
-                  onChanged: (value) {
-                    setState(() {
-                      _wrongAnswers[index] = value;
-                    });
-                  },
-                  style: TextStyle(color: Colors.black),
-                  decoration: InputDecoration(
-                    labelText: 'Неправильный ответ',
-                    labelStyle: TextStyle(color: Colors.black),
-                    border: OutlineInputBorder(),
+    // print(_wrongAnswers);
+    // print(_answerListObjects);
+    // print("Controllers: $_controllers");
+    return SingleChildScrollView(
+      child: Column(
+        // children: _wrongAnswers.map((answer) {
+        children: _wrongAnswers.asMap().entries.map((entity) {
+          // int index = _wrongAnswers.indexOf(answer); // Получаем индекс текущего ответа
+          int index = entity.key; // Получаем индекс текущего ответа
+          String answer = entity.value; // Получаем индекс текущего ответа
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _controllers[index],
+                    // initialValue: _wrongAnswers[index],
+                    onChanged: (value) {
+                      setState(() {
+                        _wrongAnswers[index] = value;
+                      });
+                    },
+                    style: TextStyle(color: Colors.black),
+                    decoration: InputDecoration(
+                      labelText: 'Неправильный ответ',
+                      labelStyle: TextStyle(color: Colors.black),
+                      border: OutlineInputBorder(),
+                    ),
                   ),
                 ),
-              ),
-              IconButton(
-                icon: Icon(Icons.delete),
-                onPressed: () async {
-                  _removeWrongAnswer(index);
-                  _deleteAnswer(index);
-                },
-              ),
-            ],
-          ),
-        );
-      },
+                IconButton(
+                  icon: Icon(Icons.delete),
+                  onPressed: () async {
+                    // print(_wrongAnswers);
+                    print(index);
+                    // print(_wrongAnswers[index]);
+                    // print(_answerListObjects[index]);
+                    // print(_answerListObjects[index]['id']);
+                    _deleteAnswer(_answerListObjects[index]['id']);
+                    // _removeWrongAnswer(index);
+                    // print("До удаления: $_wrongAnswers");
+                    setState(() {
+                      if (_wrongAnswers.length >= 1) {
+                        _wrongAnswers.removeAt(index);
+                        _answerListObjects.removeAt(index);
+                        _controllers.removeAt(index);
+                      }
+                    });
+                    // print("После удаления: $_wrongAnswers");
+                  },
+                ),
+              ],
+            ),
+          );
+        }).toList(), // Преобразуем список в виджеты
+      ),
     );
   }
 
@@ -1294,11 +1324,13 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       //   }
       // }
 
-      print(_wrongAnswers);
-      for (int i = 0; i < _wrongAnswers.length; i++) {
-        // print(_wrongAnswers[i]);
-        await _sendUnCorrectAnswerToServer(_wrongAnswers[i], _questionId!);
-      }
+      // print(_wrongAnswers);
+      // for (int i = 0; i < _wrongAnswers.length; i++) {
+      //   // print(_wrongAnswers[i]);
+      //   await _sendUnCorrectAnswerToServer(_wrongAnswers[i], _questionId!);
+      // }
+
+      await updateAllWrongAnswers();
 
 
       // Переход к следующей странице
