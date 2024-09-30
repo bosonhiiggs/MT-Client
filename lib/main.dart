@@ -6,9 +6,13 @@ import 'package:http/http.dart' as http;
 import ' authorization/password_recovery_screen.dart';
 import ' authorization/registration_screen.dart';
 import 'main_pages/music_courses_page.dart';
+import 'package:flutter/services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+  ]);
   AppMetrica.activate(AppMetricaConfig("06bffc38-8f82-4cba-96e6-1c6ae56a587e"));
 
   SharedPreferences prefs = await SharedPreferences.getInstance();

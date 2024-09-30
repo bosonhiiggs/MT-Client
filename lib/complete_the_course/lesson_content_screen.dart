@@ -30,22 +30,57 @@ class FullScreenVideoPlayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
     return Scaffold(
-      backgroundColor: Colors.black, // Устанавливаем черный фон
+      backgroundColor: Colors.black,
       body: Center(
         child: Stack(
           alignment: Alignment.center,
           children: [
-            VideoPlayer(controller),
+            AspectRatio(
+              aspectRatio: controller.value.aspectRatio,
+              child: VideoPlayer(controller),
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: VideoProgressIndicator(
+                controller,
+                allowScrubbing: true,
+              ),
+            ),
             IconButton(
               icon: Icon(
-                Icons.fullscreen_exit, // Иконка выхода из полного экрана
+                controller.value.isPlaying
+                    ? Icons.pause
+                    : Icons.play_arrow,
                 color: Colors.white,
-                size: 30,
+                size: 40,
               ),
               onPressed: () {
-                Navigator.of(context).pop(); // Возврат из полного экрана
+                controller.value.isPlaying ? controller.pause() : controller.play();
               },
+            ),
+            Positioned(
+              top: 40,
+              right: 20,
+              child: IconButton(
+                icon: Icon(
+                  Icons.fullscreen_exit,
+                  color: Colors.white,
+                  size: 30,
+                ),
+                onPressed: () {
+                  SystemChrome.setPreferredOrientations([
+                    DeviceOrientation.portraitUp,
+                  ]);
+                  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+                  Navigator.of(context).pop();
+                },
+              ),
             ),
           ],
         ),
@@ -71,6 +106,10 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
 
   @override
   void dispose() {
+    if (_controller != null) {
+      _controller!.pause();
+      _controller!.dispose();
+    }
     super.dispose();
   }
 
@@ -81,7 +120,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
     try {
       await _controller!.initialize();
       setState(() {});
-      _controller?.play();
+      // _controller?.play();
     } catch (e) {
       print("Error $e");
     }
@@ -493,57 +532,66 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
   }
 
   Widget _buildNavigationButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        if (_currentStep > 0)
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                _currentStep--;
-              });
-            },
-            child: Text('Предыдущий этап'),
-            style: ElevatedButton.styleFrom(
-              foregroundColor: Colors.white,
-              backgroundColor: Color(0xFFF48FB1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30.0),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 32.0, left: 10, right: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          if (_currentStep > 0)
+            ElevatedButton(
+              onPressed: () {
+                _controller?.pause(); // Остановить видео при переходе
+                setState(() {
+                  _currentStep--;
+                });
+              },
+              child: Text('Предыдущий этап'),
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: Color(0xFFF48FB1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30.0),
+                ),
+                minimumSize: Size(150, 50),
               ),
             ),
-          ),
-        Spacer(), // Добавляем Spacer для создания пространства между кнопками
-        if (_currentStep < _steps.length - 1)
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                _currentStep++;
-              });
-            },
-            child: Text('Следующий этап'),
-            style: ElevatedButton.styleFrom(
-              foregroundColor: Colors.white,
-              backgroundColor: Color(0xFFF48FB1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30.0),
+          Spacer(),
+          if (_currentStep < _steps.length - 1)
+            ElevatedButton(
+              onPressed: () {
+                _controller?.pause(); // Остановить видео при переходе
+                setState(() {
+                  _currentStep++;
+                });
+              },
+              child: Text('Следующий этап'),
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: Color(0xFFF48FB1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30.0),
+                ),
+                minimumSize: Size(150, 50),
               ),
             ),
-          ),
-        if (_currentStep == _steps.length - 1)
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: Text('Закончить урок'),
-            style: ElevatedButton.styleFrom(
-              foregroundColor: Colors.white,
-              backgroundColor: Color(0xFFF48FB1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30.0),
+          if (_currentStep == _steps.length - 1)
+            ElevatedButton(
+              onPressed: () {
+                _controller?.pause(); // Остановить видео при завершении
+                Navigator.pop(context);
+              },
+              child: Text('Закончить урок'),
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: Color(0xFFF48FB1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30.0),
+                ),
+                minimumSize: Size(150, 50),
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }
