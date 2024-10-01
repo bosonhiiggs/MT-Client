@@ -29,7 +29,7 @@ class _ModerationPageState extends BaseScreenState<ModerationPage> {
     if (sessionId != null) {
       try {
         final response = await http.get(
-          Uri.parse('http://80.90.187.60:8001/api/courses/'),
+          Uri.parse('http://80.90.187.60:8001/api/moderation/'),
           headers: {
             'Content-Type': 'application/json; charset=UTF-8',
             'Cookie': 'sessionid=$sessionId',
@@ -42,6 +42,7 @@ class _ModerationPageState extends BaseScreenState<ModerationPage> {
           setState(() {
             _courses = (data as List).map((json) => Course.fromJson(json)).toList();
           });
+          print(_courses);
         } else {
           // Обработка ошибок
         }
