@@ -63,10 +63,27 @@ class _ModerationPageState extends BaseScreenState<ModerationPage> {
     setState(() {
       _selectedIndex = index;
     });
-    if (index == 1) {
+    if (index == 0) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => ModerationProfilePage()),
+        // MaterialPageRoute(builder: (context) => ModerationProfilePage()),
+        PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => ModerationPage(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return child;
+            }
+        )
+      );
+    } else if (index == 1) {
+      Navigator.pushReplacement(
+        context,
+        // MaterialPageRoute(builder: (context) => ModerationProfilePage()),
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => ModerationProfilePage(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return child;
+          }
+        )
       );
     }
   }
