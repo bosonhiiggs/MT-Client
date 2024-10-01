@@ -5,8 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../base/base_screen_state.dart';
 import '../base/bottom_navigation_utils.dart';
 import '../main.dart';
-import '../moderation/moderation_page.dart';
 import '../moderation/moderation_profile_page.dart';
+import 'music_courses_page.dart';
 import 'my_courses_page.dart';
 import 'my_creations_page.dart';
 import '../user_profile/edit_user.dart';
@@ -135,6 +135,21 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => ProfilePage()),
+      );
+    } else if (index == 0) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MusicCoursesScreen()),
+      );
+    } else if (index == 1) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MyCoursesScreen()),
+      );
+    } else if (index == 2) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MyCreationsScreen()),
       );
     }
   }
