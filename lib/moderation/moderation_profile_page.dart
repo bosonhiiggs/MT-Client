@@ -159,7 +159,7 @@ class _ModerationProfilePageState extends BaseScreenState<ModerationProfilePage>
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text('Мой профиль'),
+        title: Text('Профиль модератора'),
         centerTitle: true,
         backgroundColor: Color(0xFFF48FB1),
       ),

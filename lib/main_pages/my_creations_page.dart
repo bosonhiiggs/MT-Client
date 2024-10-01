@@ -208,6 +208,35 @@ class _MyCreationsScreenState extends BaseScreenState<MyCreationsScreen> {
           title: Text('Мои творения'),
           centerTitle: true,
           backgroundColor: Color(0xFFF48FB1),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.add_circle_outline, color: Colors.black),
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => CreateCoursePage()),
+                );
+                if (result != null) {
+                  setState(() {
+                    _courses.add(Course(
+                      id: 0,
+                      // Temporary ID
+                      title: result['name'],
+                      description: result['description'],
+                      targetDescription: result['targetDescription'],
+                      logo: result['image'] ?? '',
+                      slug: result['slug'] ?? '',
+                      creatorUsername: 'you',
+                      createdAtFormatted: 'Now',
+                      approval: false,
+                      rating: 0.0, // Temporary rating
+                    ));
+                  });
+                }
+              },
+            ),
+          ],
         ),
         body: Center(
           child: Column(
@@ -323,47 +352,6 @@ class _MyCreationsScreenState extends BaseScreenState<MyCreationsScreen> {
                     },
                   ),
                 ),
-              SizedBox(height: 16.0),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Spacer(),
-                  ElevatedButton(
-                    child: Text('Создать курс'),
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Color(0xFFF48FB1),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30.0),
-                      ),
-                    ),
-                    onPressed: () async {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => CreateCoursePage()),
-                      );
-                      if (result != null) {
-                        setState(() {
-                          _courses.add(Course(
-                            id: 0,
-                            // Temporary ID
-                            title: result['name'],
-                            description: result['description'],
-                            targetDescription: result['targetDescription'],
-                            logo: result['image'] ?? '',
-                            slug: result['slug'] ?? '',
-                            creatorUsername: 'you',
-                            createdAtFormatted: 'Now',
-                            approval: false,
-                            rating: 0.0, // Temporary rating
-                          ));
-                        });
-                      }
-                    },
-                  ),
-                ],
-              ),
             ],
           ),
         ),
