@@ -22,7 +22,7 @@ class Course {
   final String slug;
   final String creatorUsername;
   final String createdAtFormatted;
-  final bool approval;
+  bool approval;
   final double rating; // Добавлено поле для рейтинга
 
   Course({
@@ -138,6 +138,63 @@ class _MyCreationsScreenState extends BaseScreenState<MyCreationsScreen> {
     }
   }
 
+  Future<void> _changeCourseApprovalStatus(String slug) async {
+    // print("Disaproove this server");
+    final url = 'http://80.90.187.60:8001/api/mycreations/$slug/approve/';
+
+    final response = await http.patch(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json; charset=UTF-8',
+        // Добавьте необходимые заголовки для аутентификации, если требуется
+      },
+      body: json.encode({'action': 'disapprove'}),
+    );
+
+    if (response.statusCode == 200) {
+      print('Статус курса успешно обновлен');
+    } else {
+      print('Ошибка при обновлении статуса курса: ${response.statusCode}');
+    }
+  }
+
+  void _handleCourseTap(Course course) async {
+    if (!course.approval) {
+      _navigateToCreateCoursePage3(context, course);
+    } else {
+      bool? shouldContinue = await _showApprovalWarningDialog();
+      if (shouldContinue == true) {
+        setState(() {
+          course.approval = false;
+        });
+        await _changeCourseApprovalStatus(course.slug);
+        _navigateToCreateCoursePage3(context, course);
+      }
+    }
+  }
+
+  Future<bool?> _showApprovalWarningDialog() {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Внимание'),
+          content: Text('Продолжая, статус курса пропадет и ему снова придется отправиться на модерацию. Вы уверены?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text('Отмена'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text('Да'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _navigateToCreateCoursePage3(BuildContext context, Course course) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('courseSlug', course.slug);
@@ -226,7 +283,8 @@ class _MyCreationsScreenState extends BaseScreenState<MyCreationsScreen> {
                       final course = _courses[index];
                       return GestureDetector(
                         onTap: () {
-                          _navigateToCreateCoursePage3(context, course);
+                          _handleCourseTap(course);
+                          // _navigateToCreateCoursePage3(context, course);
                         },
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
@@ -313,6 +371,11 @@ class _MyCreationsScreenState extends BaseScreenState<MyCreationsScreen> {
                                         ),
                                       ),
                                     ),
+                                    Positioned(
+                                      top: 30,
+                                      right: 25,
+                                      child: _buildApprovalBadge(course.approval),
+                                    ),
                                   ],
                                 ),
                               ],
@@ -323,7 +386,11 @@ class _MyCreationsScreenState extends BaseScreenState<MyCreationsScreen> {
                     },
                   ),
                 ),
-              SizedBox(height: 16.0),
+              // SizedBox(height: 16.0),
+              // Container(
+              //   height:   16.0, // Отступ с прозрачным фоном
+              //   color: Colors.transparent,
+              // ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -368,6 +435,21 @@ class _MyCreationsScreenState extends BaseScreenState<MyCreationsScreen> {
           ),
         ),
         bottomNavigationBar: buildBottomNavigationBar(_selectedIndex, onItemTapped)
+    );
+  }
+
+  Widget _buildApprovalBadge(bool approval) {
+    print("_buildApprovalBadge: $approval");
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: approval ? Colors.green : Colors.red,
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Text(
+        approval ? 'Одобрен' : 'Не одобрен',
+        style: TextStyle(color: Colors.white),
+      ),
     );
   }
 }
