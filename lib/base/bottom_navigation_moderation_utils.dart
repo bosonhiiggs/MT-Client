@@ -21,5 +21,6 @@ BottomNavigationBar buildBottomNavigationBarModeration(int currentIndex, Functio
     unselectedItemColor: Colors.white,
     backgroundColor: Color(0xFFF48FB1),
     onTap: onItemTapped,
+    showUnselectedLabels: false, // Скрывает метки для неактивных элементов
   );
 }
