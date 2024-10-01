@@ -1,23 +1,20 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../base/base_screen_state.dart';
-import '../base/bottom_navigation_utils.dart';
+import '../base/bottom_navigation_moderation_utils.dart';
 import '../main.dart';
-import '../moderation/moderation_page.dart';
-import '../moderation/moderation_profile_page.dart';
-import 'my_courses_page.dart';
-import 'my_creations_page.dart';
-import '../user_profile/edit_user.dart';
+import '../main_pages/profile_page.dart';
+import 'moderation_page.dart'; // Импортируем ModerationPage
 
-class ProfilePage extends StatefulWidget {
+class ModerationProfilePage extends StatefulWidget {
   @override
-  _ProfilePageState createState() => _ProfilePageState();
+  _ModerationProfilePageState createState() => _ModerationProfilePageState();
 }
 
-class _ProfilePageState extends BaseScreenState<ProfilePage> {
-  int _selectedIndex = 3;
+class _ModerationProfilePageState extends BaseScreenState<ModerationProfilePage> {
+  int _selectedIndex = 1;
   String _email = 'loading...';
   String _fullName = 'loading...';
   String _avatarUrl = 'http://80.90.187.60:8001/media/users/users_default_avatar.jpg'; // Установите URL по умолчанию
@@ -120,10 +117,10 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
     // Добавьте функционал для перехода к информации о компании
   }
 
-  void _enterModerationMode() {
+  void _exitModerationMode() {
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => ModerationProfilePage()),
+      MaterialPageRoute(builder: (context) => ProfilePage()),
     );
   }
 
@@ -131,10 +128,15 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
     setState(() {
       _selectedIndex = index;
     });
-    if (index == 3) {
+    if (index == 0) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => ProfilePage()),
+        MaterialPageRoute(builder: (context) => ModerationPage()),
+      );
+    } else if (index == 1) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => ModerationProfilePage()),
       );
     }
   }
@@ -175,27 +177,10 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
                       color: Colors.grey,
                     ),
                   ),
-                  SizedBox(height: 16.0),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => EditUserPage()),
-                      );
-                    },
-                    child: Text('Редактировать профиль'),
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Color(0xFFF48FB1),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30.0),
-                      ),
-                    ),
-                  ),
                   SizedBox(height: 8.0),
                   ElevatedButton(
-                    onPressed: _enterModerationMode,
-                    child: Text('Вход в режим модерации'),
+                    onPressed: _exitModerationMode,
+                    child: Text('Выйти из режима модерации'),
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.white,
                       backgroundColor: Color(0xFFF48FB1),
@@ -234,7 +219,7 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
           ),
         ],
       ),
-      bottomNavigationBar: buildBottomNavigationBar(_selectedIndex, onItemTapped),
+      bottomNavigationBar: buildBottomNavigationBarModeration(_selectedIndex, onItemTapped),
     );
   }
 }
