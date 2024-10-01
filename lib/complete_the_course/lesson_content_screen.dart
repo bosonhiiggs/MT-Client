@@ -212,7 +212,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
     for (var step in _steps) {
       if (step['type'] == 'file') {
         print('type: ${step['type']}; id: ${step['id']}');
-        // await _loadFileContent(step['id']);
+        await _loadFileContent(step['id']);
 
       } else if (step['type'] == 'text') {
         print('type: ${step['type']}; id: ${step['id']}');
