@@ -360,7 +360,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       } else {
         final responseBody = utf8.decode(response.bodyBytes);
         print('Failed to send text data: ${response.statusCode}');
-        print('Response body: ${responseBody}');
+        // print('Response body: ${responseBody}');
       }
     } catch (e) {
       print('Error sending text data: $e');

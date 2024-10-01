@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,6 +15,33 @@ class CourseDetailsScreen extends StatefulWidget {
   _CourseDetailsScreenState createState() => _CourseDetailsScreenState();
 }
 
+class UserInfo {
+  final String username;
+  final String firstname;
+  final String lastname;
+  final String email;
+  final String avatar;
+
+  UserInfo({
+    required this.username,
+    required this.firstname,
+    required this.lastname,
+    required this.email,
+    required this.avatar,
+  });
+
+  factory UserInfo.fromJson(Map<String, dynamic> json) {
+    return UserInfo(
+      username: json['username'] ?? '',
+      firstname: json['first_name'] ?? '',
+      lastname: json['last_name'] ?? '',
+      email: json['email'] ?? '',
+      avatar: json['avatar'] ?? '',
+    );
+  }
+}
+
+
 class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   bool _isExpanded = false;
   List<Module> _modules = [];
@@ -23,7 +51,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   OverlayEntry? _overlayEntry;
   List<Comment> _comments = [];
   String _commentText = '';
-  double _rating = 0.0;
+  int _rating = 1;
   bool _isLoading = true;
   String _userFirstName = '';
   String _userLastName = '';
@@ -139,7 +167,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   Future<void> _fetchComments() async {
     if (_sessionId == null || _csrfToken == null) return;
 
-    final url = 'http://80.90.187.60:8001/api/mycourses/${widget.course.slug}/comments/';
+    final url = 'http://80.90.187.60:8001/api/mycourses/${widget.course.slug}/';
     print('Fetching comments from: $url');
 
     try {
@@ -151,19 +179,36 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         },
       );
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
+      // print('Response status: ${response.statusCode}');
+      // print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final rawData = utf8.decode(response.bodyBytes);
         final data = json.decode(rawData);
-        print('Decoded data: $data');
+        final comments_data = data['ratings'];
+        print('Decoded data: $comments_data');
 
-        List<Comment> comments = (data as List).map((json) => Comment.fromJson(json)).toList();
+        // List<Comment> comments = (comments_data as List).map((json) => Comment.fromJson(json)).toList();
+
+
+        List<Comment> comments = [];
+        for (var json in comments_data) {
+          final comment = Comment.fromJson(json);
+          final userInfo = await _fetchUserInfo(comment.user); // Получаем информацию о пользователе
+          final firstName = userInfo.firstname.isNotEmpty ? userInfo.firstname : userInfo.username;
+          final lastName = userInfo.lastname.isNotEmpty ? userInfo.lastname : '';
+
+          comments.add(comment.copyWith(
+            firstName: firstName,
+            lastName: lastName,
+            avatar: userInfo.avatar,
+          ));
+        }
 
         setState(() {
           _comments = comments;
         });
+        print(_comments);
         print('Comments fetched successfully: $_comments');
       } else {
         print('Failed to fetch comments: ${response.statusCode}');
@@ -174,24 +219,38 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     }
   }
 
-  Future<void> _submitComment() async {
-    if (_sessionId == null || _csrfToken == null || _currentLessonId == null) return;
+  Future<UserInfo> _fetchUserInfo(int userId) async {
+    final url = 'http://80.90.187.60:8001/api/user/$userId/';
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Cookie': 'sessionid=$_sessionId',
+      },
+    );
 
-    // Assuming you have the module_id, lesson_id, and content_id available
-    final moduleId = 1; // Replace with the actual module ID
-    final lessonId = _currentLessonId; // Replace with the actual lesson ID if different
-    final contentId = 1; // Replace with the actual content ID
+    if (response.statusCode == 200) {
+      final rawData = utf8.decode(response.bodyBytes);
+      final data = json.decode(rawData);
+      return UserInfo.fromJson(data);
+    } else {
+      throw Exception('Failed to load user info');
+    }
+  }
+
+  Future<void> _submitComment() async {
+    print("Push button for comments");
+    if (_sessionId == null || _csrfToken == null) return;
 
     // Construct the URL
-    final url = 'http://80.90.187.60:8001/api/mycourses/${widget.course.slug}/modules/$moduleId/$lessonId/$contentId/comments/';
+    final url = 'http://80.90.187.60:8001/api/mycourses/${widget.course.slug}/review-post/';
     print('Submitting comment to: $url'); // Debugging information
 
     // Construct the request body
     final requestBody = json.encode({
-      'comment': _commentText,
-      'ratings': [_rating],
-      'first_name': _userFirstName,
-      'last_name': _userLastName,
+      // 'comment': _commentText,
+      'rating': _rating,
+      'review': _commentText
     });
     print('Request body: $requestBody'); // Debugging information
 
@@ -200,7 +259,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         Uri.parse(url),
         headers: {
           'Content-Type': 'application/json; charset=UTF-8',
-          'Cookie': 'sessionid=$_sessionId',
+          'Cookie': 'sessionid=$_sessionId; csrftoken=$_csrfToken',
           'X-CSRFToken': _csrfToken!,
         },
         body: requestBody,
@@ -214,14 +273,26 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         final data = json.decode(rawData);
         print('Decoded data: $data'); // Debugging information
 
-        Comment newComment = Comment.fromJson(data);
+        final userId = data['user'];
+        final userInfo = await _fetchUserInfo(userId);
+
+        Comment newComment = Comment.fromJson(data).copyWith(
+          firstName: userInfo.firstname.isNotEmpty
+              ? userInfo.firstname
+              : userInfo.username,
+          lastName: userInfo.lastname,
+          avatar: userInfo.avatar,
+        );
 
         setState(() {
           _comments.add(newComment);
           _commentText = '';
-          _rating = 0.0;
+          _rating = 1;
         });
-        print('Comment submitted successfully: $newComment'); // Debugging information
+        print(
+            'Comment submitted successfully: $newComment'); // Debugging information
+      } else if (response.statusCode == 500) {
+        _showErrorDialig("Ваш отзыв уже существует");
       } else {
         print('Failed to submit comment: ${response.statusCode}'); // Debugging information
         print('Response body: ${response.body}'); // Debugging information
@@ -256,6 +327,26 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     );
 
     Overlay.of(context)?.insert(_overlayEntry!);
+  }
+
+  void _showErrorDialig(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Упс...'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              child: Text('Закрыть'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _hideLessonId() {
@@ -394,7 +485,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                 return GestureDetector(
                   onTap: () {
                     setState(() {
-                      _rating = index + 1.0;
+                      _rating = index + 1;
                     });
                   },
                   child: Icon(
@@ -596,11 +687,11 @@ class Lesson {
 
 class Comment {
   final int id;
-  final String user;
+  final int user;
   final String firstName;
   final String lastName;
   final String avatar;
-  final String comment;
+  final String review;
   final double rating;
 
   Comment({
@@ -609,7 +700,7 @@ class Comment {
     required this.firstName,
     required this.lastName,
     required this.avatar,
-    required this.comment,
+    required this.review,
     required this.rating,
   });
 
@@ -620,8 +711,28 @@ class Comment {
       firstName: json['first_name'] ?? '',
       lastName: json['last_name'] ?? '',
       avatar: json['avatar'] ?? '',
-      comment: json['comment'] ?? '',
+      review: json['review'] ?? '',
       rating: json['rating']?.toDouble() ?? 0.0,
+    );
+  }
+
+  Comment copyWith({
+    int? id,
+    int? user,
+    String? firstName,
+    String? lastName,
+    String? avatar,
+    String? review,
+    double? rating,
+  }) {
+    return Comment(
+      id: id ?? this.id,
+      user: user ?? this.user,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      avatar: avatar ?? this.avatar,
+      review: review ?? this.review,
+      rating: rating ?? this.rating,
     );
   }
 }
@@ -666,7 +777,7 @@ class CommentTile extends StatelessWidget {
                 ),
                 SizedBox(height: 8.0),
                 Text(
-                  comment.comment,
+                  comment.review,
                   style: TextStyle(fontSize: 14),
                 ),
                 SizedBox(height: 8.0),
