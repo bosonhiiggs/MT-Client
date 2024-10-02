@@ -1,25 +1,24 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../base/base_screen_state.dart';
-import '../base/bottom_navigation_utils.dart';
+import '../base/bottom_navigation_moderation_utils.dart';
 import '../main.dart';
-import '../moderation/moderation_profile_page.dart';
-import '../user_profile/edit_user.dart';
+import '../main_pages/profile_page.dart';
+import 'moderation_page.dart'; // Импортируем ModerationPage
 
-class ProfilePage extends StatefulWidget {
+class ModerationProfilePage extends StatefulWidget {
   @override
-  _ProfilePageState createState() => _ProfilePageState();
+  _ModerationProfilePageState createState() => _ModerationProfilePageState();
 }
 
-class _ProfilePageState extends BaseScreenState<ProfilePage> {
-  int _selectedIndex = 3;
+class _ModerationProfilePageState extends BaseScreenState<ModerationProfilePage> {
+  int _selectedIndex = 1;
   String _email = 'loading...';
   String _fullName = 'loading...';
   String _avatarUrl = 'http://80.90.187.60:8001/media/users/users_default_avatar.jpg'; // Установите URL по умолчанию
-  bool _isModerator = false;
 
   @override
   void initState() {
@@ -47,7 +46,6 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
           final data = json.decode(rawData);
           print('Decoded data: $data');
           setState(() {
-            _isModerator = data['is_moderator'] ?? false;
             _email = data['email'] ?? 'user@email.auth';
             _fullName = (data['first_name']?.isNotEmpty == true && data['last_name']?.isNotEmpty == true)
                 ? '${data['first_name']} ${data['last_name']}'
@@ -120,21 +118,11 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
     // Добавьте функционал для перехода к информации о компании
   }
 
-  void _enterModerationMode() {
-    // Navigator.pushReplacement(
-    //   context,
-    //   MaterialPageRoute(builder: (context) => ModerationProfilePage()),
-    // );
-    if (_isModerator) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => ModerationProfilePage()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('У вас нет прав модератора.'))
-      );
-    }
+  void _exitModerationMode() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => ProfilePage()),
+    );
   }
 
   void _launchEmail() async {
@@ -149,12 +137,41 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
     }
   }
 
+  void onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+    if (index == 0) {
+      Navigator.pushReplacement(
+          context,
+          // MaterialPageRoute(builder: (context) => ModerationProfilePage()),
+          PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) => ModerationPage(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return child;
+              }
+          )
+      );
+    } else if (index == 1) {
+      Navigator.pushReplacement(
+          context,
+          // MaterialPageRoute(builder: (context) => ModerationProfilePage()),
+          PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) => ModerationProfilePage(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return child;
+              }
+          )
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text('Мой профиль'),
+        title: Text('Профиль модератора'),
         centerTitle: true,
         backgroundColor: Color(0xFFF48FB1),
       ),
@@ -185,27 +202,10 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
                       color: Colors.grey,
                     ),
                   ),
-                  SizedBox(height: 16.0),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => EditUserPage()),
-                      );
-                    },
-                    child: Text('Редактировать профиль'),
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Color(0xFFF48FB1),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30.0),
-                      ),
-                    ),
-                  ),
                   SizedBox(height: 8.0),
                   ElevatedButton(
-                    onPressed: _enterModerationMode,
-                    child: Text('Вход в режим модерации'),
+                    onPressed: _exitModerationMode,
+                    child: Text('Выйти из режима модерации'),
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.white,
                       backgroundColor: Color(0xFFF48FB1),
@@ -244,7 +244,7 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
           ),
         ],
       ),
-      bottomNavigationBar: buildBottomNavigationBar(_selectedIndex, onItemTapped),
+      bottomNavigationBar: buildBottomNavigationBarModeration(_selectedIndex, onItemTapped),
     );
   }
 }

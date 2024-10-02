@@ -1,27 +1,26 @@
 import 'dart:convert';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
-import 'course_details_screen.dart';
 import 'package:http/http.dart' as http;
+import 'course_approval_page.dart';
 
-class LessonContentScreen extends StatefulWidget {
+class LessonReviewScreen extends StatefulWidget {
   final Lesson lesson;
   final String courseSlug;
   final int moduleId;
   final int lessonId;
 
-  LessonContentScreen({required this.lesson,
+  LessonReviewScreen({required this.lesson,
     required this.courseSlug,
     required this.moduleId,
     required this.lessonId,
   });
 
   @override
-  _LessonContentScreenState createState() => _LessonContentScreenState();
+  _LessonReviewScreenState createState() => _LessonReviewScreenState();
 }
 
 class FullScreenVideoPlayer extends StatelessWidget {
@@ -90,16 +89,12 @@ class FullScreenVideoPlayer extends StatelessWidget {
   }
 }
 
-class _LessonContentScreenState extends State<LessonContentScreen> {
+class _LessonReviewScreenState extends State<LessonReviewScreen> {
   int _currentStep = 0;
   dynamic _lessonData;
   String? _theoryContent;
   String? _fileContent;
   String? _questionText;
-  String? _taskContent;
-  String? _selectedFilePath;
-  String? _submissionMessage;
-  bool? _ratingMessage;
   List<dynamic> _testAnswers = [];
   VideoPlayerController? _controller;
   int? _selectedAnswerIndex;
@@ -110,7 +105,6 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
   void initState() {
     super.initState();
     _loadPreferences(); // Загружаем данные при инициализации
-
   }
 
   @override
@@ -124,7 +118,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
 
   Future<void> _initializeVideoController(String videoUrl) async {
     _controller = VideoPlayerController.networkUrl(Uri.parse(
-      "http://80.90.187.60:8001/${videoUrl}"
+        "http://80.90.187.60:8001/${videoUrl}"
     ));
     try {
       await _controller!.initialize();
@@ -199,30 +193,20 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
           'id': content['id'],
         });
       }
-      if (content.containsKey('task_content')) {
-        _steps.add({
-          'type': 'task',
-          'id': content['id'],
-        });
-      }
     }
 
     _steps.sort((a, b) {
-      if (a['type'] == 'file' && b['type'] != 'file') return -1; // Файл вперед
-      if (a['type'] != 'file' && b['type'] == 'file') return 1;  // Если b - файл, он впереди
+      if (a['type'] == 'file' && b['type'] != 'file') return -1; // Видео вперед
+      if (a['type'] != 'file' && b['type'] == 'file') return 1;  // Если b - видео, оно впереди
 
-      if (a['type'] == 'text' && b['type'] != 'text') return -1; // Текст после файла
-      if (a['type'] != 'text' && b['type'] == 'text') return 1;  // Если b - текст, он впереди
+      if (a['type'] == 'text' && b['type'] != 'text') return -1; // Теория после видео
+      if (a['type'] != 'text' && b['type'] == 'text') return 1;  // Если b - теория, оно впереди
 
-      if (a['type'] == 'question' && b['type'] != 'question') return -1; // Вопрос после текста
-      if (a['type'] != 'question' && b['type'] == 'question') return 1;  // Если b - вопрос, он впереди
+      if (a['type'] == 'question') return 1;  // Тесты всегда последние
+      if (b['type'] == 'question') return -1; // Если b - тест, оно позади
 
-      if (a['type'] == 'task' && b['type'] != 'task') return -1; // Задание после вопроса
-      if (a['type'] != 'task' && b['type'] == 'task') return 1;  // Если b - задание, оно впереди
-
-      return 0; // Для всех остальных типов - оставляем порядок без изменений
+      return 0;
     });
-
 
     for (var step in _steps) {
       if (step['type'] == 'file') {
@@ -236,10 +220,6 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
       } else if (step['type'] == 'question') {
         print('type: ${step['type']}; id: ${step['id']}');
         await _loadTestContent(step['id']);
-
-      } else if (step['type'] == 'task') {
-        print('type: ${step['type']}; id: ${step['id']}');
-        await _loadTaskContent(step['id']);
 
       }
     }
@@ -349,184 +329,12 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
     }
   }
 
-
-  Future<void> _loadTaskContent(int contentId) async {
-    try {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? sessionid = prefs.getString('sessionid');
-      String? csrfToken = prefs.getString('csrftoken');
-
-      final Map<String, String> headers = {};
-
-      if (sessionid != null && csrfToken != null) {
-        headers['Cookie'] = 'sessionid=$sessionid; csrftoken=$csrfToken';
-        headers['X-CSRFToken'] = csrfToken;
-      }
-
-      final url = 'http://80.90.187.60:8001/api/mycourses/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/';
-      final response = await http.get(Uri.parse(url), headers: headers);
-
-      if (response.statusCode == 200) {
-        final rawData = utf8.decode(response.bodyBytes);
-        final data = jsonDecode(rawData);
-        setState(() {
-          // _questionText = data['item']['text'];
-          _taskContent = data['item']['description'];
-        });
-        await _checkFileExistence(contentId);
-      } else {
-        print('Failed to load Task Text');
-        print('Response code: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error to load task: $e');
-    }
-  }
-
   void _enterFullScreen() {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.leanBack);
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => FullScreenVideoPlayer(controller: _controller!),
-      ));
-  }
-
-  Future<void> _pickFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
-
-    if (result != null) {
-      setState(() {
-        _selectedFilePath = result.files.single.path; // Сохраняем путь к файлу
-      });
-    } else {
-      print('No file selected');
-    }
-  }
-
-
-  Future<void> _submitHomework(int contentId, String filePath) async {
-    try {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? sessionid = prefs.getString('sessionid');
-      String? csrfToken = prefs.getString('csrftoken');
-
-      final Map<String, String> headers = {};
-      if (sessionid != null && csrfToken != null) {
-        headers['Cookie'] = 'sessionid=$sessionid; csrftoken=$csrfToken';
-        headers['X-CSRFToken'] = csrfToken;
-      }
-
-      final url = 'http://80.90.187.60:8001/api/mycourses/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/';
-
-      var request = http.MultipartRequest('POST', Uri.parse(url));
-      request.headers.addAll(headers);
-      request.files.add(await http.MultipartFile.fromPath('file', filePath));
-
-      final response = await request.send();
-
-      if (response.statusCode == 200) {
-        // Уведомляем пользователя об успешной отправке
-        print('File submit successfully');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Файл успешно отправлен!')),
-        );
-      } else {
-        print('Ошибка отправки файла: ${response.statusCode}');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка отправки файла. Попробуйте еще раз.')),
-        );
-      }
-    } catch (e) {
-      print('Ошибка отправки файла: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Произошла ошибка. Попробуйте еще раз.')),
-      );
-    }
-  }
-
-
-  Future<void> _checkFileExistence(int currentContentId) async {
-    try {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? sessionid = prefs.getString('sessionid');
-      String? csrfToken = prefs.getString('csrftoken');
-
-      final Map<String, String> headers = {};
-      if (sessionid != null && csrfToken != null) {
-        headers['Cookie'] = 'sessionid=$sessionid; csrftoken=$csrfToken';
-        headers['X-CSRFToken'] = csrfToken;
-      }
-
-      final response = await http.get(
-          Uri.parse('http://80.90.187.60:8001/api/mycourses/${widget
-              .courseSlug}/modules/${widget.moduleId}/${widget
-              .lessonId}/$currentContentId/submission'),
-          headers: headers
-      );
-      print("Status check HW: ${response.statusCode}");
-
-      if (response.statusCode == 200) {
-        // print(228);
-        final data = jsonDecode(response.body);
-        if (data['file'] != null) {
-          if (mounted) {
-            setState(() {
-              _selectedFilePath = data['file'];
-              _submissionMessage =
-              "Файл на сервере: ${_selectedFilePath!.split('/').last}";
-            });
-            // print("Путь до ДЗ$_selectedFilePath");
-          }
-          await _checkReview(currentContentId, headers);
-        } else {
-          if (mounted) {
-            setState(() {
-              _submissionMessage = "Файл не найден на сервере.";
-            });
-          }
-        }
-      } else {
-        if (mounted) {
-          setState(() {
-            _submissionMessage = "Ошибка при проверке файла.";
-          });
-        }
-      }
-    } catch (e) {
-      print("Error check file: $e");
-    }
-  }
-
-  Future<void> _checkReview(int currentContentId, Map<String, String> headers) async {
-    try {
-      final reviewResponse = await http.get(
-        Uri.parse('http://80.90.187.60:8001/api/mycourses/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$currentContentId/submission/review'),
-        headers: headers,
-      );
-
-      if (reviewResponse.statusCode == 200) {
-        final reviewData = jsonDecode(reviewResponse.body);
-        if (reviewData['is_correct'] != null) {
-          final rating = reviewData['is_correct'];
-          // if (mounted) {
-          //   setState(() {
-          //     _ratingMessage = "\n$rating"; // Добавляем оценку к сообщению
-          //   });
-          // }
-          if (rating) {
-            setState(() {
-              _ratingMessage = true;
-            });
-          } else if (rating) {
-            setState(() {
-              _ratingMessage = false;
-            });
-          }
-        }
-      }
-    } catch (e) {
-      print("Error check review: $e");
-    }
+        MaterialPageRoute(
+          builder: (context) => FullScreenVideoPlayer(controller: _controller!),
+        ));
   }
 
   @override
@@ -576,7 +384,6 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
     }
 
     final currentStepData = _steps[_currentStep];
-    // print(currentStepData);
 
     switch (currentStepData['type']) {
       case 'file':
@@ -585,10 +392,10 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
         print('Step text: ${currentStepData['data']}');
         return _buildTheoryStep();
       case 'question':
+        print('Step question: ${currentStepData['data']}');
+        print(_questionText);
+        print(_testAnswers);
         return _buildTestStep();
-      case 'task':
-        // print('task');
-        return _buildHomeworkStep();
       default:
         return Container();
     }
@@ -702,32 +509,49 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
                   itemCount: _testAnswers.length,
                   itemBuilder: (context, index) {
                     final answer = _testAnswers[index];
-                    bool isCorrect = answer['is_true']; // Предположим, у вас есть эта информация
+                    bool isCorrect = answer['is_true'];
                     bool isSelected = _selectedAnswerIndex == index;
 
-                    return Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () {
-                          setState(() {
-                            _selectedAnswerIndex = index;
-                          });
-                        },
-                        splashColor: Colors.transparent, // Убираем цвет всплеска
-                        highlightColor: Colors.transparent,
-                        child: Card(
-                          elevation: 4,
-                          margin: const EdgeInsets.symmetric(vertical: 8.0),
-                          color: isSelected
-                              ? (isCorrect ? Colors.green : Colors.red)
-                              : Colors.white, // Цвет по умолчанию
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Text(answer['text']),
-                          ),
-                        ),
+                    Color backgroundColor;
+                    if (isCorrect) {
+                      backgroundColor = Colors.green;
+                    } else {
+                      backgroundColor = Colors.red;
+                    }
+
+                    return Card(
+                      elevation: 4,
+                      margin: const EdgeInsets.symmetric(vertical: 8.0),
+                      color: backgroundColor,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Text(answer['text']),
                       ),
                     );
+
+                    // return Material(
+                    //   color: Colors.transparent,
+                    //   child: InkWell(
+                    //     onTap: () {
+                    //       setState(() {
+                    //         _selectedAnswerIndex = index;
+                    //       });
+                    //     },
+                    //     splashColor: Colors.transparent, // Убираем цвет всплеска
+                    //     highlightColor: Colors.transparent,
+                    //     child: Card(
+                    //       elevation: 4,
+                    //       margin: const EdgeInsets.symmetric(vertical: 8.0),
+                    //       color: isSelected
+                    //           ? (isCorrect ? Colors.green : Colors.red)
+                    //           : Colors.white, // Цвет по умолчанию
+                    //       child: Padding(
+                    //         padding: const EdgeInsets.all(16.0),
+                    //         child: Text(answer['text']),
+                    //       ),
+                    //     ),
+                    //   ),
+                    // );
                   },
                 ),
               ],
@@ -739,8 +563,6 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
   }
 
   Widget _buildHomeworkStep() {
-    final currentContentId = _steps[_currentStep]['id'];
-
     return Column(
       children: [
         AppBar(
@@ -748,63 +570,19 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
           automaticallyImplyLeading: false,
           centerTitle: true,
         ),
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Задание: $_taskContent',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 20),
-              if (_selectedFilePath == null)
-                ElevatedButton(
-                  onPressed: _pickFile,
-                  child: Text('Прикрепить файл'),
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Color(0xFFF48FB1),
-                  ),
-                ),
-              SizedBox(height: 20),
-              if (_selectedFilePath != null)
-                Text('Выбранный файл: ${_selectedFilePath!.split('/').last}'),
-              ElevatedButton(
-                onPressed: () {
-                  if (_selectedFilePath != null) {
-                    _submitHomework(currentContentId, _selectedFilePath!);
-                  } else {
-                    print('Пожалуйста, прикрепите файл перед отправкой.');
-                  }
-                },
-                child: Text('Отправить'),
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: Color(0xFFF48FB1),
-                ),
-              ),
-              SizedBox(height: 30,),
-              if (_ratingMessage != null)
-                Container(
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: _ratingMessage == true
-                        ? Colors.green[200] // Цвет для "зачтено"
-                        : Colors.red[200],  // Цвет для "не принято"
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    _ratingMessage == true ? 'Зачтено' : 'Не принято',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: _ratingMessage == true ? Colors.green : Colors.red,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-            ],
+        // Здесь вы можете добавить виджет для отображения домашнего задания
+        Text('Домашнее задание'),
+        ElevatedButton(
+          onPressed: () {
+            // Логика для отправки домашнего задания
+          },
+          child: Text('Отправить домашнее задание'),
+          style: ElevatedButton.styleFrom(
+            foregroundColor: Colors.white,
+            backgroundColor: Color(0xFFF48FB1),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30.0),
+            ),
           ),
         ),
       ],

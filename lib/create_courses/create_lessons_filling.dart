@@ -10,11 +10,10 @@ import 'package:mime/mime.dart';
 
 import 'create_lessons.dart'; // для определения MIME типа файла
 
-
 class LessonData {
   final String lessonName;
   final String videoPath;
-  final String taskText;
+  final String theoryText;
   final String testQuestion;
   final String correctAnswer;
   final List<String> wrongAnswers;
@@ -22,7 +21,7 @@ class LessonData {
   LessonData({
     required this.lessonName,
     required this.videoPath,
-    required this.taskText,
+    required this.theoryText,
     required this.testQuestion,
     required this.correctAnswer,
     required this.wrongAnswers,
@@ -72,10 +71,12 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
   String _taskText = '';
   String _testQuestion = '';
   String _correctAnswer = '';
+  String _homeworkText = '';
   int _correctAnswerId = 0;
   String _initialTaskText = '';
   String _initialQuestionText = '';
   String _initialCorrectAnswer = '';
+  String _initialHomeworkText = '';
   List<String> _wrongAnswers = [];
   List<dynamic> _answerListObjects = [];
   PlatformFile? videoFile;
@@ -84,8 +85,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
   TextEditingController _taskTextController = TextEditingController();
   TextEditingController _testQuestionController = TextEditingController();
   TextEditingController _correctAnswerController = TextEditingController();
-  // TextEditingController _wrongAnswerController = TextEditingController();
-
+  TextEditingController _homeworkController = TextEditingController(); // Добавлен контроллер для домашнего задания
   List<TextEditingController> _controllers = [];
 
   int? _contentId;
@@ -97,7 +97,6 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
     _lessonName = widget.lessonName;
     _taskTextController.text = _taskText;
     _fetchLessonData();
-    // print("InitState _wrongAnswers: $_wrongAnswers");
   }
 
   @override
@@ -109,19 +108,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
     super.dispose();
   }
 
-  // void parseData(Map<String, dynamic> data) {
-  //   var answers = data['answers'] as List<dynamic>;
-  //   _wrongAnswers = answers.where((answer) => !answer['is_true']).map((answer) {
-  //     return Answer(
-  //       id: answer['id'],
-  //       text: answer['text'],
-  //       isTrue: answer['is_true'],
-  //     );
-  //   }).toList();
-  // }
-
   Future<void> _initializeVideoController(String videoUrl) async {
-    // print(videoUrl);
     _controller = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
     try {
       await _controller!.initialize();
@@ -147,14 +134,14 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget
           .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/';
       final response = await http.get(
-        Uri.parse(url),
-        headers: headers
+          Uri.parse(url),
+          headers: headers
       );
 
       if (response.statusCode == 200) {
         final rawData = utf8.decode(response.bodyBytes);
         final data = jsonDecode(rawData);
-        // print('Decoded data: $data');
+        print(data);
 
         List<dynamic> contents = data['contents'];
         for (var content in contents) {
@@ -164,15 +151,16 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
             await _fetchContentData(content['id'], 'file');
           } else if (content.containsKey('question_content')) {
             await _fetchContentData(content['id'], 'question');
+          } else if (content.containsKey('task_content')) {
+            await _fetchContentData(content['id'], 'task');
           }
-          
+
         }
 
       } else {
         print('Cant load to lesson data. Status code: ${response.statusCode}');
         print('Body: ${response.body}');
       }
-
 
     } catch (e) {
       print('Error to process load lesson data: $e');
@@ -197,10 +185,9 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       if (response.statusCode == 200) {
         final rawData = utf8.decode(response.bodyBytes);
         final contentData = jsonDecode(rawData);
-        // print('Content data: $contentData');
-        
+        print(contentData);
+        //
         if (typeObject == 'text') {
-          // print('text');
           setState(() {
             _taskText = contentData['content'];
             _taskTextController.text = _taskText;
@@ -210,7 +197,6 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
         }
 
         if (typeObject == 'file') {
-          // print('file');
           setState(() {
             String videoUrl = "http://80.90.187.60:8001${contentData['file']}";
             _videoPath = videoUrl;
@@ -220,7 +206,6 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
         }
 
         if (typeObject == 'question') {
-          // print('question');
           await _parseAnswers(contentId, contentData['answers']);
           setState(() {
             _testQuestion = contentData['text'];
@@ -230,6 +215,16 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
             _questionId = contentData['id'];
           });
           _controllers = List.generate(_wrongAnswers.length, (index) => TextEditingController(text: _wrongAnswers[index]));
+        }
+
+        if (typeObject == 'task') {
+          print("Домашка");
+          setState(() {
+            _homeworkText = contentData['description'];
+            _homeworkController.text = _homeworkText;
+            _initialHomeworkText = _homeworkText;
+            _contentId = contentId;
+          });
         }
 
       } else {
@@ -268,20 +263,15 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
 
   Future<void> _initializeController() async {
     if (videoFile != null) {
-      // Инициализируем контроллер с выбранным видео
       _controller = VideoPlayerController.file(File(videoFile!.path!));
 
       try {
-        // Асинхронная инициализация видео
         await _controller!.initialize();
-        // Воспроизведение видео автоматически после инициализации
         setState(() {
           _controller?.play();
         });
       } catch (e) {
-        // Обработка ошибки при инициализации видео
         print('Ошибка инициализации видео: $e');
-        // Здесь можно добавить логику показа ошибки пользователю
       }
     }
   }
@@ -325,6 +315,46 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
     }
   }
 
+  Future<void> _sendHomeworkToServer() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final sessionId = prefs.getString('sessionid');
+    final csrfToken = prefs.getString('csrftoken');
+
+    final Map<String, String> headers = {
+      'Content-Type': 'application/json',
+    };
+
+    if (sessionId != null && csrfToken != null) {
+      headers['Cookie'] = 'sessionid=$sessionId; csrftoken=$csrfToken';
+      headers['X-CSRFToken'] = csrfToken;
+    }
+
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget
+        .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/task/';
+
+    final requestBody = {
+      "title": "Домашнее задание - ${widget.lessonName}",
+      "description": _homeworkText
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: headers,
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 201) {
+        print('Task data sent successfully');
+      } else {
+        final responseBody = utf8.decode(response.bodyBytes);
+        print('Failed to send task data: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error sending task data: $e');
+    }
+  }
+
 
   Future<void> _sendTextToServer() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -360,7 +390,6 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       } else {
         final responseBody = utf8.decode(response.bodyBytes);
         print('Failed to send text data: ${response.statusCode}');
-        print('Response body: ${responseBody}');
       }
     } catch (e) {
       print('Error sending text data: $e');
@@ -386,8 +415,8 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
 
     try {
       final response = await http.delete(
-        Uri.parse(url),
-        headers: headers
+          Uri.parse(url),
+          headers: headers
       );
 
       if (response.statusCode == 204) {
@@ -401,6 +430,47 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       print("Error deleting text data: $e");
     }
   }
+
+  Future<void> _updateHomeworkData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final sessionId = prefs.getString('sessionid');
+    final csrfToken = prefs.getString('csrftoken');
+
+    final Map<String, String> headers = {
+      'Content-Type': 'application/json',
+    };
+
+    if (sessionId != null && csrfToken != null) {
+      headers['Cookie'] = 'sessionid=$sessionId; csrftoken=$csrfToken';
+      headers['X-CSRFToken'] = csrfToken;
+    }
+
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget
+        .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/task/';
+
+    final requestBody = {
+      "title": "Домашнее задание - ${widget.lessonName}",
+      "description": _homeworkText
+    };
+
+    try {
+      final response = await http.patch(
+        Uri.parse(url),
+        headers: headers,
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 200) {
+        print('Task update successfully');
+      } else {
+        final responseBody = utf8.decode(response.bodyBytes);
+        print('Failed to update task data: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error update task data: $e');
+    }
+  }
+
 
   Future<void> _updateTextData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -463,7 +533,6 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
     var request = http.MultipartRequest('POST', Uri.parse(url))
       ..headers.addAll(headers);
 
-    // Если видео выбрано, добавляем его в multipart request
     if (videoFile != null) {
       final mimeType = lookupMimeType(videoFile!.path!);
       final video = await http.MultipartFile.fromPath(
@@ -476,7 +545,6 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       request.files.add(video);
       print(request);
 
-      // Логируем информацию о видео
       print('Отправляемое видео: ${videoFile!.name}, MIME: $mimeType');
     }
 
@@ -613,14 +681,10 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
     final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget
         .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/question/';
 
-    // final requestBody = {};
-
     final requestBody = {
-      "title": "${widget.courseSlug}${widget.moduleId}-${widget
-          .lessonId}question",
+      "title": "${widget.courseSlug}${widget.moduleId}-${widget.lessonId}question",
       "text": _testQuestion
     };
-
 
     try {
       final response = await http.patch(
@@ -689,7 +753,6 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
 
   Future<void> _sendUnCorrectAnswerToServer(String answer, int questionId) async {
     print("send uncorrect answer");
-    // print(answer);
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
     final sessionId = prefs.getString('sessionid');
@@ -731,7 +794,6 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
     } catch (e) {
       print('Error sending answer data: $e');
     }
-
 
   }
 
@@ -819,7 +881,6 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       } else {
         final responseBody = utf8.decode(response.bodyBytes);
         print('Failed to update answer data: ${response.statusCode}');
-        // print('Response body: $responseBody');
       }
     } catch (e) {
       print('Error updating answer data: $e');
@@ -828,21 +889,17 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
 
   Future<void> updateAllWrongAnswers() async {
     for (int i = 0; i < _wrongAnswers.length; i++) {
-      // final answerId = _answerListObjects[i]['id'];
       final answerText = _wrongAnswers[i];
 
-      // Если ответ пустой, пропускаем его
       if (answerText.isEmpty) {
         continue;
       }
 
-      // Обновление существующего ответа
       if (_answerListObjects[i]['text'] != answerText) {
         await _updateWrongAnswer(i, answerText);
       }
     }
 
-    // Добавление новых ответов
     for (String answerText in _wrongAnswers) {
       if (!_answerListObjects.any((answer) => answer['text'] == answerText)) {
         await _sendUnCorrectAnswerToServer(answerText, _questionId!);
@@ -852,8 +909,6 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
 
   Future<void> _deleteAnswer(answerIndex) async {
     print("ID for delete: ${answerIndex}");
-    // final answer = _answerListObjects[answerIndex];
-    // final answerForDeleteId = answer['id'];
     final answerForDeleteId = answerIndex;
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -880,7 +935,6 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
 
       if (response.statusCode == 204) {
         print('Answer data delete successfully');
-        // _fetchLessonData();
       } else {
         final responseBody = utf8.decode(response.bodyBytes);
         print('Failed to delete asnwer data: ${response.statusCode}');
@@ -896,36 +950,26 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
     if (_wrongAnswers.length >= 3) {
       _showLimitREachedDialog();
     } else {
-        setState(() {
-          _wrongAnswers.add('');
-          _answerListObjects.add({});
-          _controllers.add(TextEditingController());
-        });
-      }
+      setState(() {
+        _wrongAnswers.add('');
+        _answerListObjects.add({});
+        _controllers.add(TextEditingController());
+      });
+    }
   }
-
-  // void _removeWrongAnswer(int index) {
-  //   print("Индекс в _removeWrongAnswer: $index");
-  //   setState(() {
-  //     if (_wrongAnswers.length >= 1) {
-  //       _wrongAnswers.removeAt(index);
-  //       _answerListObjects.removeAt(index);
-  //     }
-  //   });
-  // }
 
   void _showLimitREachedDialog() {
     showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text('Лимит достигнут'),
-            content: Text('Вы не можете добавить больше 3 неправильных ответов.'),
-            actions: [
-              TextButton(onPressed: () {Navigator.of(context).pop();}, child: Text('OK'))
-            ],
-          );
-        },
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Лимит достигнут'),
+          content: Text('Вы не можете добавить больше 3 неправильных ответов.'),
+          actions: [
+            TextButton(onPressed: () {Navigator.of(context).pop();}, child: Text('OK'))
+          ],
+        );
+      },
     );
   }
 
@@ -954,37 +998,42 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
               // Блок для прикрепления видео
               _buildVideoAttachmentSection(),
               if (!_isVideoDeleted && _controller != null && _controller!.value.isInitialized)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Container(
-                    height: 300,
-                    width: double.infinity,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        VideoPlayer(_controller!),
-                        Align(
-                          alignment: Alignment.bottomCenter,
-                          child: VideoProgressIndicator(
-                              _controller!, allowScrubbing: true),
-                        ),
-                        IconButton(
-                          icon: Icon(
-                            _controller!.value.isPlaying
-                                ? Icons.pause
-                                : Icons.play_arrow,
-                            color: Colors.white,
-                            size: 40,
+                GestureDetector(
+                  onLongPress: () {
+                    _showVideoDeleteBottomSheet(context);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Container(
+                      height: 300,
+                      width: double.infinity,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          VideoPlayer(_controller!),
+                          Align(
+                            alignment: Alignment.bottomCenter,
+                            child: VideoProgressIndicator(
+                                _controller!, allowScrubbing: true),
                           ),
-                          onPressed: () {
-                            setState(() {
+                          IconButton(
+                            icon: Icon(
                               _controller!.value.isPlaying
-                                  ? _controller!.pause()
-                                  : _controller!.play();
-                            });
-                          },
-                        ),
-                      ],
+                                  ? Icons.pause
+                                  : Icons.play_arrow,
+                              color: Colors.white,
+                              size: 40,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _controller!.value.isPlaying
+                                    ? _controller!.pause()
+                                    : _controller!.play();
+                              });
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -993,18 +1042,6 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
                 Text(
                   'Выбранное видео: ${videoFile!.name}',
                   style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              if (!_isVideoDeleted)
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _isVideoDeleted = true;
-                      _isNewVideoAdded = false;
-                      _controller?.dispose();
-                      videoFile = null;
-                    });
-                  },
-                  child: Text('Удалить видео'),
                 ),
               if (_isVideoDeleted)
                 Text(
@@ -1022,6 +1059,8 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
               _buildWrongAnswersList(),
               // Кнопка для добавления неправильного ответа
               _buildAddWrongAnswerButton(),
+              // Поле для домашнего задания
+              _buildHomeworkTextField(),
               // Кнопка "Сохранить"
               _buildSaveButton(context),
             ],
@@ -1119,7 +1158,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
           },
           style: TextStyle(color: Colors.black),
           decoration: InputDecoration(
-            hintText: 'Текст задания',
+            hintText: 'Текст теории',
             labelStyle: TextStyle(color: Colors.white),
             filled: true,
             fillColor: Colors.white,
@@ -1141,18 +1180,34 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
   Widget _buildTestQuestionField() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        controller: _testQuestionController,
-        onChanged: (value) {
-          setState(() {
-            _testQuestion = value;
-          });
-        },
-        style: TextStyle(color: Colors.black),
-        decoration: InputDecoration(
-          labelText: 'Вопрос для теста',
-          labelStyle: TextStyle(color: Colors.black),
-          border: OutlineInputBorder(),
+      child: Container(
+        padding: EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: Color(0xFFF48FB1),
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        child: TextFormField(
+          controller: _testQuestionController,
+          onChanged: (value) {
+            setState(() {
+              _testQuestion = value;
+            });
+          },
+          style: TextStyle(color: Colors.black),
+          decoration: InputDecoration(
+            hintText: 'Вопрос для теста',
+            labelStyle: TextStyle(color: Colors.white),
+            filled: true,
+            fillColor: Colors.white,
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.white),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.white),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+          ),
         ),
       ),
     );
@@ -1181,16 +1236,11 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
 
 // Метод для создания списка неправильных ответов
   Widget _buildWrongAnswersList() {
-    // print(_wrongAnswers);
-    // print(_answerListObjects);
-    // print("Controllers: $_controllers");
     return SingleChildScrollView(
       child: Column(
-        // children: _wrongAnswers.map((answer) {
         children: _wrongAnswers.asMap().entries.map((entity) {
-          // int index = _wrongAnswers.indexOf(answer); // Получаем индекс текущего ответа
-          int index = entity.key; // Получаем индекс текущего ответа
-          String answer = entity.value; // Получаем индекс текущего ответа
+          int index = entity.key;
+          String answer = entity.value;
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
             child: Row(
@@ -1198,7 +1248,6 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
                 Expanded(
                   child: TextFormField(
                     controller: _controllers[index],
-                    // initialValue: _wrongAnswers[index],
                     onChanged: (value) {
                       setState(() {
                         _wrongAnswers[index] = value;
@@ -1213,16 +1262,9 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.delete),
+                  icon: Icon(Icons.delete, color: Color(0xFFF48FB1)),
                   onPressed: () async {
-                    // print(_wrongAnswers);
-                    print(index);
-                    // print(_wrongAnswers[index]);
-                    // print(_answerListObjects[index]);
-                    // print(_answerListObjects[index]['id']);
                     _deleteAnswer(_answerListObjects[index]['id']);
-                    // _removeWrongAnswer(index);
-                    // print("До удаления: $_wrongAnswers");
                     setState(() {
                       if (_wrongAnswers.length >= 1) {
                         _wrongAnswers.removeAt(index);
@@ -1230,13 +1272,12 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
                         _controllers.removeAt(index);
                       }
                     });
-                    // print("После удаления: $_wrongAnswers");
                   },
                 ),
               ],
             ),
           );
-        }).toList(), // Преобразуем список в виджеты
+        }).toList(),
       ),
     );
   }
@@ -1246,6 +1287,50 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
     return ElevatedButton(
       onPressed: _addWrongAnswer,
       child: Text('Добавить неправильный ответ'),
+      style: ElevatedButton.styleFrom(
+        foregroundColor: Colors.white,
+        backgroundColor: Color(0xFFF48FB1),
+        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+        textStyle: TextStyle(fontSize: 16),
+      ),
+    );
+  }
+
+// Метод для создания поля домашнего задания
+  Widget _buildHomeworkTextField() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Container(
+        padding: EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: Color(0xFFF48FB1),
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        child: TextFormField(
+          controller: _homeworkController,
+          maxLines: null,
+          onChanged: (value) {
+            setState(() {
+              _homeworkText = value;
+            });
+          },
+          style: TextStyle(color: Colors.black),
+          decoration: InputDecoration(
+            hintText: 'Домашнее задание',
+            labelStyle: TextStyle(color: Colors.white),
+            filled: true,
+            fillColor: Colors.white,
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.white),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.white),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -1260,7 +1345,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
         style: ElevatedButton.styleFrom(
           foregroundColor: Colors.white,
           backgroundColor: Color(0xFFF48FB1),
-          padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 32.0),
+          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
           textStyle: TextStyle(fontSize: 16),
         ),
       ),
@@ -1312,28 +1397,24 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       if (_initialCorrectAnswer.isEmpty && _correctAnswer.isNotEmpty) {
         await _sendCorrectAnswerToServer(_questionId!);
       } else if (_correctAnswer != _initialCorrectAnswer) {
-        // if (_correctAnswer.isEmpty) {
-        //   await _deleteAnswer(_contentId!);
-        // } else {
-        //   await _updateAnswer();
-        // }
         await _updateCorrectAnswer();
       }
 
-      // for (int i = 0; i < _wrongAnswers.length; i++) {
-      //   if (_wrongAnswers[i] != _answerListObjects[i]['text']) {
-      //     await _updateWrongAnswer(i, _wrongAnswers[i]);
-      //   }
-      // }
-
-      // print(_wrongAnswers);
-      // for (int i = 0; i < _wrongAnswers.length; i++) {
-      //   // print(_wrongAnswers[i]);
-      //   await _sendUnCorrectAnswerToServer(_wrongAnswers[i], _questionId!);
-      // }
-
       await updateAllWrongAnswers();
 
+      if (_initialHomeworkText.isEmpty && _homeworkText.isNotEmpty) {
+        print('Отправка на сервер');
+        // await _sendTextToServer();
+        await _sendHomeworkToServer();
+      } else if (_homeworkText != _initialHomeworkText) {
+        if (_homeworkText.isEmpty) {
+          // print("Delete homework with id ${_contentId!}");
+          await _deleteTextData(_contentId!);
+        } else {
+          print("Update homework");
+          await _updateHomeworkData();
+        }
+      }
 
       // Переход к следующей странице
       Navigator.pushReplacement(
@@ -1352,5 +1433,36 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
     }
   }
 
-
+  void _showVideoDeleteBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          padding: EdgeInsets.all(16.0),
+          child: GestureDetector(
+            onTap: () async {
+              setState(() {
+                _isVideoDeleted = true;
+                _isNewVideoAdded = false;
+                _controller?.dispose();
+                videoFile = null;
+              });
+              await _deleteVideoFromServer(_contentId!);
+              Navigator.pop(context);
+            },
+            child: Row(
+              children: [
+                Icon(Icons.delete, color: Colors.black),
+                SizedBox(width: 8),
+                Text(
+                  'Удалить видео',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }

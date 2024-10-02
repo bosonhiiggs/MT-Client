@@ -7,6 +7,7 @@ import 'profile_page.dart';
 import 'my_courses_page.dart';
 import 'my_creations_page.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 
 class Course {
   final int id;
@@ -243,24 +244,51 @@ class _MusicCoursesScreenState extends BaseScreenState<MusicCoursesScreen> {
                               ),
                             ),
                             SizedBox(height: 20),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: ElevatedButton(
-                                onPressed: () async {
-                                  await _purchaseCourse(course);
-                                  Navigator.of(context).pop();
-                                  _navigateToMyCourses(context, course);
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  foregroundColor: Colors.white,
-                                  backgroundColor: Color(0xFFF48FB1),
-                                  padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(30), // Увеличиваем радиус для овальной формы
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                GestureDetector(
+                                  onTap: () async {
+                                    List<Comment> comments = await fetchComments(course.slug);
+                                    showDialog<void>(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return CommentsDialog(comments: comments);
+                                      },
+                                    );
+                                  },
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.star,
+                                        color: Color(0xFFF48FB1),
+                                        size: 30,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        _formatRatingForDialog(course.rating),
+                                        style: TextStyle(fontSize: 14),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                child: Text('Начать'),
-                              ),
+                                ElevatedButton(
+                                  onPressed: () async {
+                                    await _purchaseCourse(course);
+                                    Navigator.of(context).pop();
+                                    _navigateToMyCourses(context, course);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    backgroundColor: Color(0xFFF48FB1),
+                                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30), // Увеличиваем радиус для овальной формы
+                                    ),
+                                  ),
+                                  child: Text('Начать'),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -276,6 +304,14 @@ class _MusicCoursesScreenState extends BaseScreenState<MusicCoursesScreen> {
     );
   }
 
+  String _formatRatingForDialog(double rating) {
+    if (rating % 1 == 0) {
+      return '${rating.toInt()}';
+    } else {
+      return '${rating.toStringAsFixed(1)}';
+    }
+  }
+
   Future<void> _navigateToMyCourses(BuildContext context, Course? course) async {
     Navigator.push(
       context,
@@ -287,38 +323,52 @@ class _MusicCoursesScreenState extends BaseScreenState<MusicCoursesScreen> {
 
   Widget _buildRating(double rating) {
     return Row(
-      children: List.generate(5, (index) {
-        if (index < rating.floor()) {
-          return Icon(
-            Icons.star,
-            color: Color(0xFFF48FB1),
-          );
-        } else if (index == rating.floor() && rating % 1 != 0) {
-          return Stack(
-            children: [
-              Icon(
-                Icons.star,
-                color: Colors.grey,
-              ),
-              ClipRect(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  widthFactor: rating % 1,
-                  child: Icon(
-                    Icons.star,
-                    color: Color(0xFFF48FB1),
-                  ),
-                ),
-              ),
-            ],
-          );
-        } else {
-          return Icon(
-            Icons.star,
-            color: Colors.grey,
-          );
-        }
-      }),
+      children: [
+        GestureDetector(
+          onTap: () {
+            _showCommentsDialog(context, rating);
+          },
+          child: Row(
+            children: List.generate(5, (index) {
+              if (index < rating.floor()) {
+                return Icon(
+                  Icons.star,
+                  color: Color(0xFFF48FB1),
+                );
+              } else if (index == rating.floor() && rating % 1 != 0) {
+                return Stack(
+                  children: [
+                    Icon(
+                      Icons.star,
+                      color: Colors.grey,
+                    ),
+                    ClipRect(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: rating % 1,
+                        child: Icon(
+                          Icons.star,
+                          color: Color(0xFFF48FB1),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              } else {
+                return Icon(
+                  Icons.star,
+                  color: Colors.grey,
+                );
+              }
+            }),
+          ),
+        ),
+        SizedBox(width: 8),
+        Text(
+          _formatRating(rating),
+          style: TextStyle(fontSize: 14),
+        ),
+      ],
     );
   }
 
@@ -330,30 +380,159 @@ class _MusicCoursesScreenState extends BaseScreenState<MusicCoursesScreen> {
     }
   }
 
+  Widget _buildAdvertisement() {
+    return GestureDetector(
+      onTap: () {
+        _launchEmail();
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Card(
+          elevation: 4.0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.asset(
+              'assets/icons/reklama.png',
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: 250,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _launchEmail() async {
+    final Uri emailLaunchUri = Uri(
+      scheme: 'mailto',
+      path: 'pyaninyury@yandex.ru',
+    );
+    if (await canLaunch(emailLaunchUri.toString())) {
+      await launch(emailLaunchUri.toString());
+    } else {
+      throw 'Could not launch email';
+    }
+  }
+
+  Future<void> _showCommentsDialog(BuildContext context, double rating) async {
+    // Загрузка комментариев для курса
+    List<Comment> comments = await fetchComments(rating as String);
+
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return CommentsDialog(comments: comments);
+      },
+    );
+  }
+
+  Future<List<Comment>> fetchComments(String courseSlug) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? sessionId = prefs.getString('sessionid');
+    String? csrfToken = prefs.getString('csrftoken');
+
+    if (sessionId == null || csrfToken == null) {
+      throw Exception('SessionID или CSRF токен отсутсвуют');
+    }
+
+    final url = 'http://80.90.187.60:8001/api/mycourses/$courseSlug/';
+    print('Fetching comments from: $url');
+
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Cookie': 'sessionid=$sessionId',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final rawData = utf8.decode(response.bodyBytes);
+        final data = json.decode(rawData);
+        final comments_data = data['ratings'] ?? [];
+        print('Decoded data: $comments_data');
+
+        List<Comment> comments = [];
+        for (var json in comments_data) {
+          final comment = Comment.fromJson(json);
+          final userInfo = await _fetchUserInfo(comment.user); // Получаем информацию о пользователе
+          final firstName = userInfo.firstname.isNotEmpty ? userInfo.firstname : userInfo.username;
+          final lastName = userInfo.lastname.isNotEmpty ? userInfo.lastname : '';
+
+          comments.add(comment.copyWith(
+            firstName: firstName,
+            lastName: lastName,
+            avatar: userInfo.avatar,
+          ));
+        }
+
+        return comments;
+      } else {
+        throw Exception('Failed to fetch comments');
+      }
+    } catch (e) {
+      print('Error fetching comments: $e');
+      throw Exception('Failed to fetch comments due to an error');
+    }
+  }
+
+  Future<UserInfo> _fetchUserInfo(int userId) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? sessionId = prefs.getString('sessionid');
+
+    if (sessionId == null) {
+      throw Exception('SessionID отсутсвует');
+    }
+
+    final url = 'http://80.90.187.60:8001/api/user/$userId/';
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Cookie': 'sessionid=$sessionId',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final rawData = utf8.decode(response.bodyBytes);
+      final data = json.decode(rawData);
+      return UserInfo.fromJson(data);
+    } else {
+      throw Exception('Failed to load user info');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          title: Text('Музыкальные курсы'),
-          centerTitle: true,
-          backgroundColor: Color(0xFFF48FB1),
-        ),
-        body: Center(
-          child: Column(
-            children: <Widget>[
-              SizedBox(height: 16.0),
-              if (_courses.isEmpty)
-                Text(
-                  'Здесь будут храниться музыкальные курсы',
-                  style: TextStyle(fontSize: 18),
-                ),
-              if (_courses.isNotEmpty)
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: _courses.length,
-                    itemBuilder: (context, index) {
-                      final course = _courses[index];
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: Text('Музыкальные курсы'),
+        centerTitle: true,
+        backgroundColor: Color(0xFFF48FB1),
+      ),
+      body: Center(
+        child: Column(
+          children: <Widget>[
+            if (_courses.isEmpty)
+              Text(
+                'Здесь будут храниться музыкальные курсы',
+                style: TextStyle(fontSize: 18),
+              ),
+            if (_courses.isNotEmpty)
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _courses.length + (_courses.length ~/ 3), // Добавляем рекламные блоки
+                  itemBuilder: (context, index) {
+                    if (index % 4 == 3) {
+                      return _buildAdvertisement();
+                    } else {
+                      final course = _courses[index - (index ~/ 4)];
                       return GestureDetector(
                         onTap: () {
                           _showStartCourseDialog(context, course);
@@ -426,16 +605,7 @@ class _MusicCoursesScreenState extends BaseScreenState<MusicCoursesScreen> {
                                                 Spacer(),
                                                 Align(
                                                   alignment: Alignment.bottomRight,
-                                                  child: Row(
-                                                    children: [
-                                                      _buildRating(course.rating),
-                                                      SizedBox(width: 5),
-                                                      Text(
-                                                        _formatRating(course.rating),
-                                                        style: TextStyle(fontSize: 14),
-                                                      ),
-                                                    ],
-                                                  ),
+                                                  child: _buildRating(course.rating),
                                                 ),
                                               ],
                                             ),
@@ -450,13 +620,195 @@ class _MusicCoursesScreenState extends BaseScreenState<MusicCoursesScreen> {
                           ),
                         ),
                       );
-                    },
+                    }
+                  },
+                ),
+              ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: buildBottomNavigationBar(_selectedIndex, onItemTapped),
+    );
+  }
+}
+
+class Comment {
+  final int id;
+  final int user;
+  final String firstName;
+  final String lastName;
+  final String avatar;
+  final String review;
+  final double rating;
+
+  Comment({
+    required this.id,
+    required this.user,
+    required this.firstName,
+    required this.lastName,
+    required this.avatar,
+    required this.review,
+    required this.rating,
+  });
+
+  factory Comment.fromJson(Map<String, dynamic> json) {
+    return Comment(
+      id: json['id'] ?? 0,
+      user: json['user'] ?? '',
+      firstName: json['first_name'] ?? '',
+      lastName: json['last_name'] ?? '',
+      avatar: json['avatar'] ?? '',
+      review: json['review'] ?? '',
+      rating: json['rating']?.toDouble() ?? 0.0,
+    );
+  }
+
+  Comment copyWith({
+    int? id,
+    int? user,
+    String? firstName,
+    String? lastName,
+    String? avatar,
+    String? review,
+    double? rating,
+  }) {
+    return Comment(
+      id: id ?? this.id,
+      user: user ?? this.user,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      avatar: avatar ?? this.avatar,
+      review: review ?? this.review,
+      rating: rating ?? this.rating,
+    );
+  }
+}
+
+class CommentTile extends StatelessWidget {
+  final Comment comment;
+
+  CommentTile({required this.comment});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 16.0),
+      padding: EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.5),
+            spreadRadius: 2,
+            blurRadius: 5,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            backgroundImage: NetworkImage(comment.avatar),
+            radius: 24,
+          ),
+          SizedBox(width: 16.0),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${comment.firstName} ${comment.lastName}',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8.0),
+                Text(
+                  comment.review,
+                  style: TextStyle(fontSize: 14),
+                ),
+                SizedBox(height: 8.0),
+                Row(
+                  children: List.generate(5, (index) {
+                    return Icon(
+                      Icons.star,
+                      color: index < comment.rating ? Color(0xFFF48FB1) : Colors.grey,
+                    );
+                  }),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class CommentsDialog extends StatelessWidget {
+  final List<Comment> comments;
+
+  CommentsDialog({required this.comments});
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Container(
+        width: double.maxFinite,
+        height: MediaQuery.of(context).size.height * 0.8, // 80% of screen height
+        child: Column(
+          children: [
+            if (comments.isEmpty)
+              Expanded(
+                child: Center(
+                  child: Text(
+                    'Нет комментариев',
+                    style: TextStyle(fontSize: 16),
                   ),
                 ),
-            ],
-          ),
+              )
+            else
+              Expanded(
+                child: ListView.builder(
+                  itemCount: comments.length,
+                  itemBuilder: (context, index) {
+                    final comment = comments[index];
+                    return CommentTile(comment: comment);
+                  },
+                ),
+              ),
+          ],
         ),
-        bottomNavigationBar: buildBottomNavigationBar(_selectedIndex, onItemTapped)
+      ),
+    );
+  }
+}
+
+class UserInfo {
+  final String username;
+  final String firstname;
+  final String lastname;
+  final String email;
+  final String avatar;
+
+  UserInfo({
+    required this.username,
+    required this.firstname,
+    required this.lastname,
+    required this.email,
+    required this.avatar,
+  });
+
+  factory UserInfo.fromJson(Map<String, dynamic> json) {
+    return UserInfo(
+      username: json['username'] ?? '',
+      firstname: json['first_name'] ?? '',
+      lastname: json['last_name'] ?? '',
+      email: json['email'] ?? '',
+      avatar: json['avatar'] ?? '',
     );
   }
 }
