@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 import 'homework_answer_detail_page.dart';
@@ -28,13 +29,66 @@ class HomeworkAnswersList extends StatelessWidget {
   HomeworkAnswersList({required this.homework});
 
   Future<List<HomeworkAnswer>> fetchAnswers() async {
-    final response = await http.get(Uri.parse('http://your-backend-url/api/homeworks/${homework.id}/answers'));
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? sessionId = prefs.getString('sessionid');
+    String? csrfToken = prefs.getString('csrftoken');
 
-    if (response.statusCode == 200) {
-      final List jsonResponse = json.decode(response.body);
-      return jsonResponse.map((answer) => HomeworkAnswer.fromJson(answer)).toList();
+    if (sessionId != null || csrfToken != null) {
+      try {
+        final url = 'http://80.90.187.60:8001/api/mycreations/tasks/${homework.id}/';
+        final response = await http.get(
+          Uri.parse(url),
+          headers: {
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Cookie': 'sessionid=$sessionId',
+          },
+        );
+        print(response.statusCode);
+
+        if (response.statusCode == 200) {
+          final rawData = utf8.decode(response.bodyBytes);
+          final data = json.decode(rawData);
+          print(data);
+          final List jsonResponse = data;
+          return jsonResponse.map((answer) => HomeworkAnswer.fromJson(answer)).toList();
+
+        } else {
+          throw Exception('Failed to load homework answers');
+        }
+      } catch (e) {
+        print('Error: $e');
+        throw Exception('Failed to load homework answers to an error');
+      }
     } else {
-      throw Exception('Failed to load answers');
+      throw Exception('SessionID или CSRF токен отсутсвуют');
+    }
+  }
+
+  Future<String> fetchStudentName(int studentId) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? sessionId = prefs.getString('sessionid');
+    if (sessionId != null) {
+      final response = await http.get(
+        Uri.parse('http://80.90.187.60:8001/api/user/$studentId/'),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Cookie': 'sessionid=$sessionId',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final rawData = utf8.decode(response.bodyBytes);
+        final userData = json.decode(rawData);
+        if (userData['first_name'] != null && userData['last_name'] != null) {
+          return '${userData['first_name']} ${userData['last_name']}';
+        } else {
+          return userData['username'];
+        }
+      } else {
+        throw Exception('Failed to load student name');
+      }
+    } else {
+      throw Exception('SessionID is missing');
     }
   }
 
@@ -50,22 +104,40 @@ class HomeworkAnswersList extends StatelessWidget {
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return Center(child: Text('No answers available'));
         } else {
-          return ListView.builder(
-            itemCount: snapshot.data!.length,
-            itemBuilder: (context, index) {
-              final answer = snapshot.data![index];
-              return ListTile(
-                title: Text(answer.name),
-                subtitle: Text('Файл: ${answer.filePath}'),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => HomeworkAnswerDetailPage(answer: answer),
-                    ),
-                  );
-                },
-              );
+          return FutureBuilder<List<String>>(
+            future: Future.wait(
+              snapshot.data!.map((answer) => fetchStudentName(answer.student)),
+            ),
+            builder: (context, namesSnapshot) {
+              if (namesSnapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              } else if (namesSnapshot.hasError) {
+                return Center(child: Text('Error fetching student names: ${namesSnapshot.error}'));
+              } else {
+                return ListView.builder(
+                  itemCount: snapshot.data!.length,
+                  itemBuilder: (context, index) {
+                    final answer = snapshot.data![index];
+                    final studentName = namesSnapshot.data![index];
+
+                    return Card(
+                      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                      elevation: 4,
+                      child: ListTile(
+                        title: Text('Ответ студента: $studentName'),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => HomeworkAnswerDetailPage(answer: answer),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                );
+              }
             },
           );
         }
@@ -76,16 +148,26 @@ class HomeworkAnswersList extends StatelessWidget {
 
 class HomeworkAnswer {
   final int id;
-  final String name;
-  final String filePath;
+  final int taskId;
+  final int student;
+  final String file;
+  final String submittedAt;
 
-  HomeworkAnswer({required this.id, required this.name, required this.filePath});
+  HomeworkAnswer({
+    required this.id,
+    required this.taskId,
+    required this.student,
+    required this.file,
+    required this.submittedAt,
+  });
 
   factory HomeworkAnswer.fromJson(Map<String, dynamic> json) {
     return HomeworkAnswer(
       id: json['id'],
-      name: json['name'],
-      filePath: json['file_path'],
+      taskId: json['task'],
+      student: json['student'],
+      file: json['file'],
+      submittedAt: json['submitted_at'],
     );
   }
 }

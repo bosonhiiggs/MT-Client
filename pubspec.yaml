@@ -25,6 +25,8 @@ dependencies:
   mime: ^1.0.1  # Заменено на mime
   flutter_ffmpeg: ^0.4.0  # Для сжатия видео
   url_launcher: ^6.0.9
+  dio: ^5.7.0
+  path_provider: ^2.1.4
 
 
 

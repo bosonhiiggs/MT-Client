@@ -13,7 +13,7 @@ import 'create_lessons.dart'; // для определения MIME типа ф�
 class LessonData {
   final String lessonName;
   final String videoPath;
-  final String taskText;
+  final String theoryText;
   final String testQuestion;
   final String correctAnswer;
   final List<String> wrongAnswers;
@@ -21,7 +21,7 @@ class LessonData {
   LessonData({
     required this.lessonName,
     required this.videoPath,
-    required this.taskText,
+    required this.theoryText,
     required this.testQuestion,
     required this.correctAnswer,
     required this.wrongAnswers,
@@ -71,10 +71,12 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
   String _taskText = '';
   String _testQuestion = '';
   String _correctAnswer = '';
+  String _homeworkText = '';
   int _correctAnswerId = 0;
   String _initialTaskText = '';
   String _initialQuestionText = '';
   String _initialCorrectAnswer = '';
+  String _initialHomeworkText = '';
   List<String> _wrongAnswers = [];
   List<dynamic> _answerListObjects = [];
   PlatformFile? videoFile;
@@ -139,6 +141,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       if (response.statusCode == 200) {
         final rawData = utf8.decode(response.bodyBytes);
         final data = jsonDecode(rawData);
+        print(data);
 
         List<dynamic> contents = data['contents'];
         for (var content in contents) {
@@ -148,6 +151,8 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
             await _fetchContentData(content['id'], 'file');
           } else if (content.containsKey('question_content')) {
             await _fetchContentData(content['id'], 'question');
+          } else if (content.containsKey('task_content')) {
+            await _fetchContentData(content['id'], 'task');
           }
 
         }
@@ -180,7 +185,8 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       if (response.statusCode == 200) {
         final rawData = utf8.decode(response.bodyBytes);
         final contentData = jsonDecode(rawData);
-
+        print(contentData);
+        //
         if (typeObject == 'text') {
           setState(() {
             _taskText = contentData['content'];
@@ -209,6 +215,16 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
             _questionId = contentData['id'];
           });
           _controllers = List.generate(_wrongAnswers.length, (index) => TextEditingController(text: _wrongAnswers[index]));
+        }
+
+        if (typeObject == 'task') {
+          print("Домашка");
+          setState(() {
+            _homeworkText = contentData['description'];
+            _homeworkController.text = _homeworkText;
+            _initialHomeworkText = _homeworkText;
+            _contentId = contentId;
+          });
         }
 
       } else {
@@ -299,6 +315,47 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
     }
   }
 
+  Future<void> _sendHomeworkToServer() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final sessionId = prefs.getString('sessionid');
+    final csrfToken = prefs.getString('csrftoken');
+
+    final Map<String, String> headers = {
+      'Content-Type': 'application/json',
+    };
+
+    if (sessionId != null && csrfToken != null) {
+      headers['Cookie'] = 'sessionid=$sessionId; csrftoken=$csrfToken';
+      headers['X-CSRFToken'] = csrfToken;
+    }
+
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget
+        .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/task/';
+
+    final requestBody = {
+      "title": "Домашнее задание - ${widget.lessonName}",
+      "description": _homeworkText
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: headers,
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 201) {
+        print('Task data sent successfully');
+      } else {
+        final responseBody = utf8.decode(response.bodyBytes);
+        print('Failed to send task data: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error sending task data: $e');
+    }
+  }
+
+
   Future<void> _sendTextToServer() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     final sessionId = prefs.getString('sessionid');
@@ -373,6 +430,47 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       print("Error deleting text data: $e");
     }
   }
+
+  Future<void> _updateHomeworkData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final sessionId = prefs.getString('sessionid');
+    final csrfToken = prefs.getString('csrftoken');
+
+    final Map<String, String> headers = {
+      'Content-Type': 'application/json',
+    };
+
+    if (sessionId != null && csrfToken != null) {
+      headers['Cookie'] = 'sessionid=$sessionId; csrftoken=$csrfToken';
+      headers['X-CSRFToken'] = csrfToken;
+    }
+
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/${widget
+        .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/task/';
+
+    final requestBody = {
+      "title": "Домашнее задание - ${widget.lessonName}",
+      "description": _homeworkText
+    };
+
+    try {
+      final response = await http.patch(
+        Uri.parse(url),
+        headers: headers,
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 200) {
+        print('Task update successfully');
+      } else {
+        final responseBody = utf8.decode(response.bodyBytes);
+        print('Failed to update task data: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error update task data: $e');
+    }
+  }
+
 
   Future<void> _updateTextData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -1213,7 +1311,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
           maxLines: null,
           onChanged: (value) {
             setState(() {
-              // Обновление состояния при изменении текста
+              _homeworkText = value;
             });
           },
           style: TextStyle(color: Colors.black),
@@ -1303,6 +1401,20 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       }
 
       await updateAllWrongAnswers();
+
+      if (_initialHomeworkText.isEmpty && _homeworkText.isNotEmpty) {
+        print('Отправка на сервер');
+        // await _sendTextToServer();
+        await _sendHomeworkToServer();
+      } else if (_homeworkText != _initialHomeworkText) {
+        if (_homeworkText.isEmpty) {
+          // print("Delete homework with id ${_contentId!}");
+          await _deleteTextData(_contentId!);
+        } else {
+          print("Update homework");
+          await _updateHomeworkData();
+        }
+      }
 
       // Переход к следующей странице
       Navigator.pushReplacement(

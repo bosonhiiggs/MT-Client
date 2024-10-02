@@ -425,52 +425,6 @@ class _MyCreationsScreenState extends BaseScreenState<MyCreationsScreen> {
                     },
                   ),
                 ),
-
-              // SizedBox(height: 16.0),
-              // Container(
-              //   height:   16.0, // Отступ с прозрачным фоном
-              //   color: Colors.transparent,
-              // ),
-              // Row(
-              //   mainAxisAlignment: MainAxisAlignment.end,
-              //   children: [
-              //     Spacer(),
-              //     ElevatedButton(
-              //       child: Text('Создать курс'),
-              //       style: ElevatedButton.styleFrom(
-              //         foregroundColor: Colors.white,
-              //         backgroundColor: Color(0xFFF48FB1),
-              //         shape: RoundedRectangleBorder(
-              //           borderRadius: BorderRadius.circular(30.0),
-              //         ),
-              //       ),
-              //       onPressed: () async {
-              //         final result = await Navigator.push(
-              //           context,
-              //           MaterialPageRoute(
-              //               builder: (context) => CreateCoursePage()),
-              //         );
-              //         if (result != null) {
-              //           setState(() {
-              //             _courses.add(Course(
-              //               id: 0,
-              //               // Temporary ID
-              //               title: result['name'],
-              //               description: result['description'],
-              //               targetDescription: result['targetDescription'],
-              //               logo: result['image'] ?? '',
-              //               slug: result['slug'] ?? '',
-              //               creatorUsername: 'you',
-              //               createdAtFormatted: 'Now',
-              //               approval: false,
-              //               rating: 0.0, // Temporary rating
-              //             ));
-              //           });
-              //         }
-              //       },
-              //     ),
-              //   ],
-              // ),
             ],
           ),
         ),
@@ -479,7 +433,6 @@ class _MyCreationsScreenState extends BaseScreenState<MyCreationsScreen> {
   }
 
   Widget _buildApprovalBadge(bool approval) {
-    print("_buildApprovalBadge: $approval");
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
