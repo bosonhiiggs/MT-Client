@@ -43,6 +43,7 @@ class _ModerationPageState extends BaseScreenState<ModerationPage> {
           setState(() {
             _courses = (data as List).map((json) => Course.fromJson(json)).toList();
           });
+          print(_courses);
         } else {
           // Обработка ошибок
         }
@@ -64,10 +65,27 @@ class _ModerationPageState extends BaseScreenState<ModerationPage> {
     setState(() {
       _selectedIndex = index;
     });
-    if (index == 1) {
+    if (index == 0) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => ModerationProfilePage()),
+        // MaterialPageRoute(builder: (context) => ModerationProfilePage()),
+        PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => ModerationPage(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return child;
+            }
+        )
+      );
+    } else if (index == 1) {
+      Navigator.pushReplacement(
+        context,
+        // MaterialPageRoute(builder: (context) => ModerationProfilePage()),
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => ModerationProfilePage(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return child;
+          }
+        )
       );
     }
   }
@@ -184,7 +202,7 @@ class _ModerationPageState extends BaseScreenState<ModerationPage> {
                   },
                 ),
               ),
-            SizedBox(height: 16.0),
+            // SizedBox(height: 16.0),
           ],
         ),
       ),

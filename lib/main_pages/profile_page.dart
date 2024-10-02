@@ -19,6 +19,7 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
   String _email = 'loading...';
   String _fullName = 'loading...';
   String _avatarUrl = 'http://80.90.187.60:8001/media/users/users_default_avatar.jpg'; // Установите URL по умолчанию
+  bool _isModerator = false;
 
   @override
   void initState() {
@@ -46,6 +47,7 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
           final data = json.decode(rawData);
           print('Decoded data: $data');
           setState(() {
+            _isModerator = data['is_moderator'] ?? false;
             _email = data['email'] ?? 'user@email.auth';
             _fullName = (data['first_name']?.isNotEmpty == true && data['last_name']?.isNotEmpty == true)
                 ? '${data['first_name']} ${data['last_name']}'
@@ -119,10 +121,20 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
   }
 
   void _enterModerationMode() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => ModerationProfilePage()),
-    );
+    // Navigator.pushReplacement(
+    //   context,
+    //   MaterialPageRoute(builder: (context) => ModerationProfilePage()),
+    // );
+    if (_isModerator) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => ModerationProfilePage()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('У вас нет прав модератора.'))
+      );
+    }
   }
 
   void _launchEmail() async {

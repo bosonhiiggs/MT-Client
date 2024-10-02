@@ -143,13 +143,25 @@ class _ModerationProfilePageState extends BaseScreenState<ModerationProfilePage>
     });
     if (index == 0) {
       Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => ModerationPage()),
+          context,
+          // MaterialPageRoute(builder: (context) => ModerationProfilePage()),
+          PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) => ModerationPage(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return child;
+              }
+          )
       );
     } else if (index == 1) {
       Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => ModerationProfilePage()),
+          context,
+          // MaterialPageRoute(builder: (context) => ModerationProfilePage()),
+          PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) => ModerationProfilePage(),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return child;
+              }
+          )
       );
     }
   }

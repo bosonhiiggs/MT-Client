@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../main_pages/music_courses_page.dart';
 import 'lesson_review_page.dart';
+import 'moderation_page.dart';
 
 class CourseApprovalScreen extends StatefulWidget {
   final Course course;
@@ -17,6 +18,7 @@ class CourseApprovalScreen extends StatefulWidget {
 class _CourseApprovalScreenState extends State<CourseApprovalScreen> {
   List<Module> _modules = [];
   String? _sessionId;
+  String? _csrfToken;
   bool _isLoading = true;
 
   @override
@@ -29,6 +31,7 @@ class _CourseApprovalScreenState extends State<CourseApprovalScreen> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       _sessionId = prefs.getString('sessionid');
+      _csrfToken = prefs.getString('csrftoken');
     });
 
     if (_sessionId != null) {
@@ -53,6 +56,7 @@ class _CourseApprovalScreenState extends State<CourseApprovalScreen> {
       if (response.statusCode == 200) {
         final rawData = utf8.decode(response.bodyBytes);
         final data = json.decode(rawData);
+        print("Decoded Modules: $data");
 
         List<Module> modules = (data as List).map((json) => Module.fromJson(json)).toList();
 
@@ -69,11 +73,14 @@ class _CourseApprovalScreenState extends State<CourseApprovalScreen> {
         setState(() {
           _isLoading = false;
         });
+        print("Status code: ${response.statusCode}");
+        print("Body: ${response.bodyBytes}");
       }
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
+      print("Error for loading modules $e");
     }
   }
 
@@ -94,21 +101,72 @@ class _CourseApprovalScreenState extends State<CourseApprovalScreen> {
       if (response.statusCode == 200) {
         final rawData = utf8.decode(response.bodyBytes);
         final data = json.decode(rawData);
+        print('Decoded lesson data: $data');
 
         List<Lesson> lessons = (data as List).map((json) => Lesson.fromJson(json)).toList();
         module.lessons.addAll(lessons);
+        print('Lessons fetched for module ${module.id}: $lessons');
+      } else {
+        print('Failed to fetch lessons for module ${module.id}: ${response.statusCode}');
+        print('Response body: ${response.body}');
       }
     } catch (e) {
       // Обработка ошибок
+      print('Error fetching lessons for module ${module.id}: $e');
     }
   }
 
   Future<void> _approveCourse() async {
     // Логика одобрения курса
+    // if (_sessionId == null) return;
+    if (_sessionId == null || _csrfToken == null) return;
+
+    final url = 'http://80.90.187.60:8001/api/moderation/${widget.course.slug}/';
+
+    try {
+      final response = await http.patch(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Cookie': 'sessionid=$_sessionId; csrftoken=$_csrfToken',
+          'X-CSRFToken': _csrfToken!,
+        },
+        body: json.encode({'action': 'approve'}),
+      );
+      if (response.statusCode == 200) {
+        print('Course approve successfully');
+      } else {
+        print('Error approve response server: ${response.statusCode}');
+      }
+    } catch (e) {
+      print("Error for approve course: $e");
+    }
   }
 
   Future<void> _rejectCourse() async {
     // Логика отклонения курса
+    if (_sessionId == null || _csrfToken == null) return;
+
+    final url = 'http://80.90.187.60:8001/api/moderation/${widget.course.slug}/';
+
+    try {
+      final response = await http.patch(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Cookie': 'sessionid=$_sessionId; csrftoken=$_csrfToken',
+          'X-CSRFToken': _csrfToken!,
+        },
+        body: json.encode({'action': 'disapprove'}),
+      );
+      if (response.statusCode == 200) {
+        print('Course disapprove successfully');
+      } else {
+        print('Error disapprove response server: ${response.statusCode}');
+      }
+    } catch (e) {
+      print("Error for disapprove course: $e");
+    }
   }
 
   Widget _buildRating(double rating) {
@@ -242,7 +300,13 @@ class _CourseApprovalScreenState extends State<CourseApprovalScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 ElevatedButton(
-                  onPressed: _approveCourse,
+                  onPressed: () {
+                    _approveCourse();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ModerationPage())
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.white,
                     backgroundColor: Color(0xFFF48FB1),
@@ -251,7 +315,13 @@ class _CourseApprovalScreenState extends State<CourseApprovalScreen> {
                   child: Text('Одобрить курс'),
                 ),
                 ElevatedButton(
-                  onPressed: _rejectCourse,
+                  onPressed: () {
+                    _rejectCourse();
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => ModerationPage())
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.white,
                     backgroundColor: Color(0xFFF48FB1),
@@ -381,7 +451,8 @@ class Module {
     return Module(
       id: json['id'] ?? 0,
       title: json['title'] ?? '',
-      lessons: (json['lessons'] as List).map((json) => Lesson.fromJson(json)).toList(),
+      // lessons: (json['lessons'] as List).map((json) => Lesson.fromJson(json)).toList(),
+      lessons: [],
     );
   }
 }

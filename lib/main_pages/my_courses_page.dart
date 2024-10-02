@@ -148,10 +148,21 @@ class _MyCoursesScreenState extends BaseScreenState<MyCoursesScreen> {
   }
 
   Future<void> _navigateToCourseDetails(BuildContext context, Course course) async {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => CourseDetailsScreen(course: course)),
-    );
+
+    if (course.approval) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => CourseDetailsScreen(course: course)),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Курс не одобрен и недоступен для прохождения'),
+          duration: Duration(seconds: 3),
+        )
+      );
+    }
   }
 
   Widget _buildRating(double rating) {
@@ -311,6 +322,11 @@ class _MyCoursesScreenState extends BaseScreenState<MyCoursesScreen> {
                                         ),
                                       ),
                                     ),
+                                    Positioned(
+                                      top: 30,
+                                      right: 25,
+                                      child: _buildApprovalBadge(course.approval),
+                                    ),
                                   ],
                                 ),
                               ],
@@ -325,6 +341,21 @@ class _MyCoursesScreenState extends BaseScreenState<MyCoursesScreen> {
           ),
         ),
         bottomNavigationBar: buildBottomNavigationBar(_selectedIndex, onItemTapped)
+    );
+  }
+
+  Widget _buildApprovalBadge(bool approval) {
+    print("_buildApprovalBadge: $approval");
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: approval ? Colors.green : Colors.red,
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Text(
+        approval ? 'Одобрен' : 'Не одобрен',
+        style: TextStyle(color: Colors.white),
+      ),
     );
   }
 }
