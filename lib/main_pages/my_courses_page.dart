@@ -211,7 +211,6 @@ class _MyCoursesScreenState extends BaseScreenState<MyCoursesScreen> {
         body: Center(
           child: Column(
             children: <Widget>[
-              SizedBox(height: 16.0),
               if (_courses.isEmpty)
                 Text(
                   'Здесь будут храниться курсы, которые вы проходите',
