@@ -6,6 +6,7 @@ import '../base/base_screen_state.dart';
 import '../base/bottom_navigation_utils.dart';
 import '../create_courses/create_course_moduels.dart';
 import '../create_courses/create_course_naming.dart';
+import '../homework/homework_check_page.dart';
 import 'profile_page.dart';
 import 'music_courses_page.dart';
 import 'my_courses_page.dart';
@@ -291,6 +292,15 @@ class _MyCreationsScreenState extends BaseScreenState<MyCreationsScreen> {
                     ));
                   });
                 }
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.assignment, color: Colors.black),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => HomeworkCheckPage()),
+                );
               },
             ),
           ],
