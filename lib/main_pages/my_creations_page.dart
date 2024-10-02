@@ -272,7 +272,7 @@ class _MyCreationsScreenState extends BaseScreenState<MyCreationsScreen> {
                 final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => CreateCoursePage()),
+                      builder: (context) => CreateCoursePage2()),
                 );
                 if (result != null) {
                   setState(() {
@@ -421,46 +421,46 @@ class _MyCreationsScreenState extends BaseScreenState<MyCreationsScreen> {
               //   height:   16.0, // Отступ с прозрачным фоном
               //   color: Colors.transparent,
               // ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Spacer(),
-                  ElevatedButton(
-                    child: Text('Создать курс'),
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Color(0xFFF48FB1),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30.0),
-                      ),
-                    ),
-                    onPressed: () async {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => CreateCoursePage()),
-                      );
-                      if (result != null) {
-                        setState(() {
-                          _courses.add(Course(
-                            id: 0,
-                            // Temporary ID
-                            title: result['name'],
-                            description: result['description'],
-                            targetDescription: result['targetDescription'],
-                            logo: result['image'] ?? '',
-                            slug: result['slug'] ?? '',
-                            creatorUsername: 'you',
-                            createdAtFormatted: 'Now',
-                            approval: false,
-                            rating: 0.0, // Temporary rating
-                          ));
-                        });
-                      }
-                    },
-                  ),
-                ],
-              ),
+              // Row(
+              //   mainAxisAlignment: MainAxisAlignment.end,
+              //   children: [
+              //     Spacer(),
+              //     ElevatedButton(
+              //       child: Text('Создать курс'),
+              //       style: ElevatedButton.styleFrom(
+              //         foregroundColor: Colors.white,
+              //         backgroundColor: Color(0xFFF48FB1),
+              //         shape: RoundedRectangleBorder(
+              //           borderRadius: BorderRadius.circular(30.0),
+              //         ),
+              //       ),
+              //       onPressed: () async {
+              //         final result = await Navigator.push(
+              //           context,
+              //           MaterialPageRoute(
+              //               builder: (context) => CreateCoursePage()),
+              //         );
+              //         if (result != null) {
+              //           setState(() {
+              //             _courses.add(Course(
+              //               id: 0,
+              //               // Temporary ID
+              //               title: result['name'],
+              //               description: result['description'],
+              //               targetDescription: result['targetDescription'],
+              //               logo: result['image'] ?? '',
+              //               slug: result['slug'] ?? '',
+              //               creatorUsername: 'you',
+              //               createdAtFormatted: 'Now',
+              //               approval: false,
+              //               rating: 0.0, // Temporary rating
+              //             ));
+              //           });
+              //         }
+              //       },
+              //     ),
+              //   ],
+              // ),
             ],
           ),
         ),

@@ -509,32 +509,49 @@ class _LessonReviewScreenState extends State<LessonReviewScreen> {
                   itemCount: _testAnswers.length,
                   itemBuilder: (context, index) {
                     final answer = _testAnswers[index];
-                    bool isCorrect = answer['is_true']; // Предположим, у вас есть эта информация
+                    bool isCorrect = answer['is_true'];
                     bool isSelected = _selectedAnswerIndex == index;
 
-                    return Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () {
-                          setState(() {
-                            _selectedAnswerIndex = index;
-                          });
-                        },
-                        splashColor: Colors.transparent, // Убираем цвет всплеска
-                        highlightColor: Colors.transparent,
-                        child: Card(
-                          elevation: 4,
-                          margin: const EdgeInsets.symmetric(vertical: 8.0),
-                          color: isSelected
-                              ? (isCorrect ? Colors.green : Colors.red)
-                              : Colors.white, // Цвет по умолчанию
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Text(answer['text']),
-                          ),
-                        ),
+                    Color backgroundColor;
+                    if (isCorrect) {
+                      backgroundColor = Colors.green;
+                    } else {
+                      backgroundColor = Colors.red;
+                    }
+
+                    return Card(
+                      elevation: 4,
+                      margin: const EdgeInsets.symmetric(vertical: 8.0),
+                      color: backgroundColor,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Text(answer['text']),
                       ),
                     );
+
+                    // return Material(
+                    //   color: Colors.transparent,
+                    //   child: InkWell(
+                    //     onTap: () {
+                    //       setState(() {
+                    //         _selectedAnswerIndex = index;
+                    //       });
+                    //     },
+                    //     splashColor: Colors.transparent, // Убираем цвет всплеска
+                    //     highlightColor: Colors.transparent,
+                    //     child: Card(
+                    //       elevation: 4,
+                    //       margin: const EdgeInsets.symmetric(vertical: 8.0),
+                    //       color: isSelected
+                    //           ? (isCorrect ? Colors.green : Colors.red)
+                    //           : Colors.white, // Цвет по умолчанию
+                    //       child: Padding(
+                    //         padding: const EdgeInsets.all(16.0),
+                    //         child: Text(answer['text']),
+                    //       ),
+                    //     ),
+                    //   ),
+                    // );
                   },
                 ),
               ],

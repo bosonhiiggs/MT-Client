@@ -202,7 +202,7 @@ class _ModerationPageState extends BaseScreenState<ModerationPage> {
                   },
                 ),
               ),
-            SizedBox(height: 16.0),
+            // SizedBox(height: 16.0),
           ],
         ),
       ),

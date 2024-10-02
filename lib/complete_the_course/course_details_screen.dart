@@ -659,7 +659,7 @@ class Module {
     required this.title,
     // required this.courseSlug,
     required this.lessons
-});
+  });
 
   factory Module.fromJson(Map<String, dynamic> json) {
     return Module(
