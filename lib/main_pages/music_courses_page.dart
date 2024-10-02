@@ -519,7 +519,6 @@ class _MusicCoursesScreenState extends BaseScreenState<MusicCoursesScreen> {
       body: Center(
         child: Column(
           children: <Widget>[
-            SizedBox(height: 16.0),
             if (_courses.isEmpty)
               Text(
                 'Здесь будут храниться музыкальные курсы',
