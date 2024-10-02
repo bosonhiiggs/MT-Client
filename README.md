@@ -1,20 +1,45 @@
-<<<<<<< HEAD
-# client
+# Music Trainee
 
-A new Flutter project.
+Это клиентская часть приложения для прохождения и создания музыкальных курсов, разработанная с помощью Flutter.
 
-## Getting Started
+## Функции
 
-This project is a starting point for a Flutter application.
+- Создание и управление курсами
+- Прохождение курсов 
+- Загрузка и просмотра видеоуроков
+- Оценивание курса 
 
-A few resources to get you started if this is your first Flutter project:
+## Технологии
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- **Flutter**: Основной фреймворк для разработки кроссплатформенных приложений.
+- **Dart**: Язык программирования, используемый в Flutter.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-=======
-# MT-Client
->>>>>>> 37a8acf (first commit)
+
+## Установка
+
+1. Клонируйте репозиторий:
+
+    ```sh
+    git clone https://github.com/bosonhiiggs/MT-Client.git
+    ```
+
+2. Перейдите в директорию проекта:
+
+    ```sh
+    cd MT-Client
+    ```
+
+3. Установите зависимости:
+
+    ```sh
+    flutter pub get
+    ```
+
+4. Запустите приложение:
+
+    ```sh
+    flutter run
+    ```
+
+
+
