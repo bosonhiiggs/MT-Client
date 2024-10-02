@@ -257,10 +257,19 @@ class _MusicCoursesScreenState extends BaseScreenState<MusicCoursesScreen> {
                                       },
                                     );
                                   },
-                                  child: Icon(
-                                    Icons.star,
-                                    color: Color(0xFFF48FB1),
-                                    size: 30,
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.star,
+                                        color: Color(0xFFF48FB1),
+                                        size: 30,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        _formatRatingForDialog(course.rating),
+                                        style: TextStyle(fontSize: 14),
+                                      ),
+                                    ],
                                   ),
                                 ),
                                 ElevatedButton(
@@ -293,6 +302,14 @@ class _MusicCoursesScreenState extends BaseScreenState<MusicCoursesScreen> {
         );
       },
     );
+  }
+
+  String _formatRatingForDialog(double rating) {
+    if (rating % 1 == 0) {
+      return '${rating.toInt()}';
+    } else {
+      return '${rating.toStringAsFixed(1)}';
+    }
   }
 
   Future<void> _navigateToMyCourses(BuildContext context, Course? course) async {
@@ -437,7 +454,7 @@ class _MusicCoursesScreenState extends BaseScreenState<MusicCoursesScreen> {
       if (response.statusCode == 200) {
         final rawData = utf8.decode(response.bodyBytes);
         final data = json.decode(rawData);
-        final comments_data = data['ratings'];
+        final comments_data = data['ratings'] ?? [];
         print('Decoded data: $comments_data');
 
         List<Comment> comments = [];
@@ -502,7 +519,6 @@ class _MusicCoursesScreenState extends BaseScreenState<MusicCoursesScreen> {
       body: Center(
         child: Column(
           children: <Widget>[
-            SizedBox(height: 16.0),
             if (_courses.isEmpty)
               Text(
                 'Здесь будут храниться музыкальные курсы',
@@ -745,15 +761,25 @@ class CommentsDialog extends StatelessWidget {
         height: MediaQuery.of(context).size.height * 0.8, // 80% of screen height
         child: Column(
           children: [
-            Expanded(
-              child: ListView.builder(
-                itemCount: comments.length,
-                itemBuilder: (context, index) {
-                  final comment = comments[index];
-                  return CommentTile(comment: comment);
-                },
+            if (comments.isEmpty)
+              Expanded(
+                child: Center(
+                  child: Text(
+                    'Нет комментариев',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ),
+              )
+            else
+              Expanded(
+                child: ListView.builder(
+                  itemCount: comments.length,
+                  itemBuilder: (context, index) {
+                    final comment = comments[index];
+                    return CommentTile(comment: comment);
+                  },
+                ),
               ),
-            ),
           ],
         ),
       ),

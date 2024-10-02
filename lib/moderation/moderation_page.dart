@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../base/base_screen_state.dart';
 import '../main_pages/music_courses_page.dart';
 import '../base/bottom_navigation_moderation_utils.dart'; // Импортируем новый файл
+import 'course_approval_page.dart';
 import 'moderation_profile_page.dart'; // Импортируем класс Course
 
 class ModerationPage extends StatefulWidget {
@@ -89,51 +90,6 @@ class _ModerationPageState extends BaseScreenState<ModerationPage> {
     }
   }
 
-  Widget _buildRating(double rating) {
-    return Row(
-      children: List.generate(5, (index) {
-        if (index < rating.floor()) {
-          return Icon(
-            Icons.star,
-            color: Color(0xFFF48FB1),
-          );
-        } else if (index == rating.floor() && rating % 1 != 0) {
-          return Stack(
-            children: [
-              Icon(
-                Icons.star,
-                color: Colors.grey,
-              ),
-              ClipRect(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  widthFactor: rating % 1,
-                  child: Icon(
-                    Icons.star,
-                    color: Color(0xFFF48FB1),
-                  ),
-                ),
-              ),
-            ],
-          );
-        } else {
-          return Icon(
-            Icons.star,
-            color: Colors.grey,
-          );
-        }
-      }),
-    );
-  }
-
-  String _formatRating(double rating) {
-    if (rating % 1 == 0) {
-      return '${rating.toInt()}/5';
-    } else {
-      return '${rating.toStringAsFixed(1)}/5';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -159,7 +115,12 @@ class _ModerationPageState extends BaseScreenState<ModerationPage> {
                     final course = _courses[index];
                     return GestureDetector(
                       onTap: () {
-                        // Логика для просмотра курса
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CourseApprovalScreen(course: course),
+                          ),
+                        );
                       },
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
@@ -225,39 +186,11 @@ class _ModerationPageState extends BaseScreenState<ModerationPage> {
                                                   maxLines: 3,
                                                 ),
                                               ),
-                                              SizedBox(height: 10),
-                                              Spacer(),
-                                              Align(
-                                                alignment: Alignment.bottomRight,
-                                                child: Row(
-                                                  children: [
-                                                    _buildRating(course.rating),
-                                                    SizedBox(width: 5),
-                                                    Text(
-                                                      _formatRating(course.rating),
-                                                      style: TextStyle(fontSize: 14),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
                                             ],
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  IconButton(
-                                    icon: Icon(Icons.check),
-                                    onPressed: () => _approveCourse(course.id),
-                                  ),
-                                  IconButton(
-                                    icon: Icon(Icons.close),
-                                    onPressed: () => _rejectCourse(course.id),
                                   ),
                                 ],
                               ),

@@ -2,13 +2,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../base/base_screen_state.dart';
 import '../base/bottom_navigation_utils.dart';
 import '../main.dart';
 import '../moderation/moderation_profile_page.dart';
-import 'music_courses_page.dart';
-import 'my_courses_page.dart';
-import 'my_creations_page.dart';
 import '../user_profile/edit_user.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -139,6 +137,18 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
     }
   }
 
+  void _launchEmail() async {
+    final Uri emailLaunchUri = Uri(
+      scheme: 'mailto',
+      path: 'pyaninyury@yandex.ru',
+    );
+    if (await canLaunch(emailLaunchUri.toString())) {
+      await launch(emailLaunchUri.toString());
+    } else {
+      throw 'Could not launch email';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -206,8 +216,8 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
                   ),
                   SizedBox(height: 8.0),
                   ElevatedButton(
-                    onPressed: _aboutCompany,
-                    child: Text('О нашей компании'),
+                    onPressed: _launchEmail,
+                    child: Text('Тех. поддержка'),
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.white,
                       backgroundColor: Color(0xFFF48FB1),
