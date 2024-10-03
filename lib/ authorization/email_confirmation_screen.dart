@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http; // Импортируйте пакет http
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert'; // Для кодировки JSON
 import 'password_reset_screen.dart';
 import '../main_pages/music_courses_page.dart'; // Импортируйте экран курсов
@@ -48,10 +49,46 @@ class _PasswordRecoveryConfirmationCodeScreenState extends State<PasswordRecover
 
       if (response.statusCode == 200) {
         // Если код верен, переходите на MusicCoursesScreen
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => MusicCoursesScreen()),
-        );
+
+        String? sessionID;
+        String? csrfToken;
+
+        if (response.headers.containsKey('set-cookie')) {
+          final cookies = response.headers['set-cookie']!;
+
+          final csrfCookie = cookies.split(';').firstWhere(
+              (cookie) => cookie.trim().startsWith('csrftoken='),
+            orElse: () => '',
+          );
+
+          if (csrfCookie.isNotEmpty) {
+            csrfToken = csrfCookie.split('=').last;
+          }
+
+          final sessionCookie = cookies.split(',').firstWhere(
+                (cookie) => cookie.trim().startsWith('sessionid='),
+            orElse: () => '',
+          );
+
+          if (sessionCookie.isNotEmpty) {
+            sessionID = sessionCookie.split(';').first.split('=').last;
+          }
+        }
+
+        if (sessionID != null && csrfToken != null) {
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          await prefs.setString('sessionid', sessionID);
+          await prefs.setString('csrftoken', csrfToken);
+          await prefs.setBool('isLoggedIn', true);
+
+          print(sessionID);
+          print(csrfToken);
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => MusicCoursesScreen()),
+          );
+        }
       } else if (response.statusCode == 400) {
         // Если код неверен, покажите ошибку
         _showErrorSnackbar('Неправильный код подтверждения');
