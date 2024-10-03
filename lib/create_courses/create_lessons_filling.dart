@@ -1339,6 +1339,20 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
     return Center(
       child: ElevatedButton(
         onPressed: () async {
+          // Переход к следующей странице
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CreateLessonPage(
+                courseSlug: widget.courseSlug,
+                courseDescription: widget.courseDescription,
+                courseAbout: widget.courseAbout,
+                moduleIndex: widget.moduleIndex,
+                moduleName: widget.moduleName,
+                moduleId: widget.moduleId,
+              ),
+            ),
+          );
           await _handleSave(context);
         },
         child: Text('Сохранить'),
@@ -1415,21 +1429,6 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
           await _updateHomeworkData();
         }
       }
-
-      // Переход к следующей странице
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => CreateLessonPage(
-            courseSlug: widget.courseSlug,
-            courseDescription: widget.courseDescription,
-            courseAbout: widget.courseAbout,
-            moduleIndex: widget.moduleIndex,
-            moduleName: widget.moduleName,
-            moduleId: widget.moduleId,
-          ),
-        ),
-      );
     }
   }
 
