@@ -15,6 +15,7 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends BaseScreenState<ProfilePage> {
+  bool _isLoading = true;
   int _selectedIndex = 3;
   String _email = 'loading...';
   String _fullName = 'loading...';
@@ -25,6 +26,7 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
   void initState() {
     super.initState();
     _fetchUserData();
+    _isLoading = false;
   }
 
   Future<void> _fetchUserData() async {
@@ -158,7 +160,7 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
         centerTitle: true,
         backgroundColor: Color(0xFFF48FB1),
       ),
-      body: Column(
+      body: _isLoading ? CircularProgressIndicator() : Column(
         children: <Widget>[
           Expanded(
             child: Center(
