@@ -685,13 +685,14 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
           ),
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: _questionText != null ? CircularProgressIndicator() : Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _questionText != null ?
                 Text(
                   'Тестовый вопрос: $_questionText',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
+                ) : Center(child: CircularProgressIndicator(),),
                 SizedBox(height: 20),
                 ListView.builder(
                   shrinkWrap: true,
@@ -747,13 +748,15 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
         ),
         Padding(
           padding: const EdgeInsets.all(16.0),
-          child: _taskContent != null ? CircularProgressIndicator() : Column(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Задание: $_taskContent',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
+                    _taskContent != null ?
+                    Text(
+                      'Задание: $_taskContent',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    )
+                    : Center(child: CircularProgressIndicator()),
               SizedBox(height: 20),
               if (_selectedFilePath == null)
                 ElevatedButton(
