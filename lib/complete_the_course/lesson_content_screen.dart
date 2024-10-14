@@ -349,7 +349,6 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
     }
   }
 
-
   Future<void> _loadTaskContent(int contentId) async {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -667,8 +666,6 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
           automaticallyImplyLeading: false,
           centerTitle: true,
         ),
-        // Здесь вы можете добавить виджет для отображения теории
-        // Text('Теоретический контент'),
         _theoryContent != null
             ? Text(_theoryContent!)
             : CircularProgressIndicator(),
@@ -688,7 +685,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
           ),
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
+            child: _questionText != null ? CircularProgressIndicator() : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -750,7 +747,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
         ),
         Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Column(
+          child: _taskContent != null ? CircularProgressIndicator() : Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(

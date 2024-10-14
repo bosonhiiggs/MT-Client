@@ -95,6 +95,7 @@ class _LessonReviewScreenState extends State<LessonReviewScreen> {
   String? _theoryContent;
   String? _fileContent;
   String? _questionText;
+  String? _taskContent;
   List<dynamic> _testAnswers = [];
   VideoPlayerController? _controller;
   int? _selectedAnswerIndex;
@@ -193,19 +194,28 @@ class _LessonReviewScreenState extends State<LessonReviewScreen> {
           'id': content['id'],
         });
       }
+      if (content.containsKey('task_content')) {
+        _steps.add({
+          'type': 'task',
+          'id': content['id'],
+        });
+      }
     }
 
     _steps.sort((a, b) {
-      if (a['type'] == 'file' && b['type'] != 'file') return -1; // Видео вперед
-      if (a['type'] != 'file' && b['type'] == 'file') return 1;  // Если b - видео, оно впереди
+      if (a['type'] == 'file' && b['type'] != 'file') return -1; // Файл вперед
+      if (a['type'] != 'file' && b['type'] == 'file') return 1;  // Если b - файл, он впереди
 
-      if (a['type'] == 'text' && b['type'] != 'text') return -1; // Теория после видео
-      if (a['type'] != 'text' && b['type'] == 'text') return 1;  // Если b - теория, оно впереди
+      if (a['type'] == 'text' && b['type'] != 'text') return -1; // Текст после файла
+      if (a['type'] != 'text' && b['type'] == 'text') return 1;  // Если b - текст, он впереди
 
-      if (a['type'] == 'question') return 1;  // Тесты всегда последние
-      if (b['type'] == 'question') return -1; // Если b - тест, оно позади
+      if (a['type'] == 'question' && b['type'] != 'question') return -1; // Вопрос после текста
+      if (a['type'] != 'question' && b['type'] == 'question') return 1;  // Если b - вопрос, он впереди
 
-      return 0;
+      if (a['type'] == 'task' && b['type'] != 'task') return -1; // Задание после вопроса
+      if (a['type'] != 'task' && b['type'] == 'task') return 1;  // Если b - задание, оно впереди
+
+      return 0; // Для всех остальных типов - оставляем порядок без изменений
     });
 
     for (var step in _steps) {
@@ -220,6 +230,10 @@ class _LessonReviewScreenState extends State<LessonReviewScreen> {
       } else if (step['type'] == 'question') {
         print('type: ${step['type']}; id: ${step['id']}');
         await _loadTestContent(step['id']);
+
+      } else if (step['type'] == 'task') {
+        print('type: ${step['type']}; id: ${step['id']}');
+        await _loadTaskContent(step['id']);
 
       }
     }
@@ -329,6 +343,39 @@ class _LessonReviewScreenState extends State<LessonReviewScreen> {
     }
   }
 
+  Future<void> _loadTaskContent(int contentId) async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? sessionid = prefs.getString('sessionid');
+      String? csrfToken = prefs.getString('csrftoken');
+
+      final Map<String, String> headers = {};
+
+      if (sessionid != null && csrfToken != null) {
+        headers['Cookie'] = 'sessionid=$sessionid; csrftoken=$csrfToken';
+        headers['X-CSRFToken'] = csrfToken;
+      }
+
+      final url = 'http://80.90.187.60:8001/api/mycourses/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/';
+      final response = await http.get(Uri.parse(url), headers: headers);
+
+      if (response.statusCode == 200) {
+        final rawData = utf8.decode(response.bodyBytes);
+        final data = jsonDecode(rawData);
+        setState(() {
+          // _questionText = data['item']['text'];
+          _taskContent = data['item']['description'];
+        });
+        // await _checkFileExistence(contentId);
+      } else {
+        print('Failed to load Task Text');
+        print('Response code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error to load task: $e');
+    }
+  }
+
   void _enterFullScreen() {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.leanBack);
     Navigator.of(context).push(
@@ -396,6 +443,9 @@ class _LessonReviewScreenState extends State<LessonReviewScreen> {
         print(_questionText);
         print(_testAnswers);
         return _buildTestStep();
+      case 'task':
+      // print('task');
+        return _buildHomeworkStep();
       default:
         return Container();
     }
@@ -571,20 +621,7 @@ class _LessonReviewScreenState extends State<LessonReviewScreen> {
           centerTitle: true,
         ),
         // Здесь вы можете добавить виджет для отображения домашнего задания
-        Text('Домашнее задание'),
-        ElevatedButton(
-          onPressed: () {
-            // Логика для отправки домашнего задания
-          },
-          child: Text('Отправить домашнее задание'),
-          style: ElevatedButton.styleFrom(
-            foregroundColor: Colors.white,
-            backgroundColor: Color(0xFFF48FB1),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30.0),
-            ),
-          ),
-        ),
+        Text("$_taskContent", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
       ],
     );
   }

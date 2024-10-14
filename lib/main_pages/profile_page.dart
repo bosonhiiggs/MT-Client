@@ -15,6 +15,7 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends BaseScreenState<ProfilePage> {
+  bool _isLoading = true;
   int _selectedIndex = 3;
   String _email = 'loading...';
   String _fullName = 'loading...';
@@ -69,6 +70,10 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
         setState(() {
           _email = 'Ошибка: ${e.toString()}';
           _fullName = 'Ошибка: ${e.toString()}';
+        });
+      } finally {
+        setState(() {
+          _isLoading = false;
         });
       }
     }
@@ -158,7 +163,7 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
         centerTitle: true,
         backgroundColor: Color(0xFFF48FB1),
       ),
-      body: Column(
+      body: _isLoading ? Center(child: CircularProgressIndicator()) : Column(
         children: <Widget>[
           Expanded(
             child: Center(

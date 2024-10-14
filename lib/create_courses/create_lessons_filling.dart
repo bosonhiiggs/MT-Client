@@ -65,6 +65,8 @@ class CreateLessonPage2 extends StatefulWidget {
 
 class _CreateLessonPage2State extends State<CreateLessonPage2> {
   final _formKey = GlobalKey<FormState>();
+  bool _isSaving = false;
+  bool _isLoading = true;
 
   String _lessonName = '';
   String _videoPath = '';
@@ -156,6 +158,10 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
           }
 
         }
+
+        setState(() {
+          _isLoading = false;
+        });
 
       } else {
         print('Cant load to lesson data. Status code: ${response.statusCode}');
@@ -471,7 +477,6 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
     }
   }
 
-
   Future<void> _updateTextData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     final sessionId = prefs.getString('sessionid');
@@ -619,6 +624,8 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       );
 
       if (response.statusCode == 201) {
+        final responseBody = json.decode(utf8.decode(response.bodyBytes));
+        _questionId = responseBody['id'];
         print('Question data sent successfully');
       } else {
         final responseBody = utf8.decode(response.bodyBytes);
@@ -985,7 +992,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
         centerTitle: true,
         backgroundColor: Color(0xFFF48FB1),
       ),
-      body: SingleChildScrollView(
+      body: _isLoading ? Center(child: CircularProgressIndicator()) : SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
@@ -1338,7 +1345,14 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
   Widget _buildSaveButton(BuildContext context) {
     return Center(
       child: ElevatedButton(
-        onPressed: () async {
+        onPressed: _isSaving ? null : () async {
+          setState(() {
+            _isSaving = true;
+          });
+          await _handleSave(context);
+          setState(() {
+            _isSaving = false;
+          });
           // Переход к следующей странице
           Navigator.pushReplacement(
             context,
@@ -1353,7 +1367,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
               ),
             ),
           );
-          await _handleSave(context);
+
         },
         child: Text('Сохранить'),
         style: ElevatedButton.styleFrom(

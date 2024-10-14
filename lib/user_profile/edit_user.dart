@@ -18,6 +18,7 @@ class EditUserPage extends StatefulWidget {
 }
 
 class _EditUserPageState extends State<EditUserPage> {
+  bool _isLoading = true;
   int _selectedIndex = 3;
   String username = '';
   String firstName = '';
@@ -81,6 +82,10 @@ class _EditUserPageState extends State<EditUserPage> {
     } catch (e) {
       print('Произошла ошибка: $e');
       throw Exception('Не удалось загрузить данные пользователя');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -226,7 +231,7 @@ class _EditUserPageState extends State<EditUserPage> {
         centerTitle: true,
         backgroundColor: Color(0xFFF48FB1),
       ),
-      body: SingleChildScrollView(
+      body: _isLoading ? Center(child: CircularProgressIndicator()) : SingleChildScrollView(
         padding: EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,

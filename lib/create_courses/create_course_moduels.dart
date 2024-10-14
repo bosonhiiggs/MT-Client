@@ -26,6 +26,7 @@ class CreateCoursePage3 extends StatefulWidget {
 }
 
 class _CreateCoursePage3State extends State<CreateCoursePage3> {
+  bool _isLoading = true;
   final _formKey = GlobalKey<FormState>();
   String? _sessionId;
   String? _csrfToken;
@@ -98,6 +99,10 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
       }
     } catch (e) {
       print('Error fetching modules: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -213,7 +218,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
         centerTitle: true,
         backgroundColor: Color(0xFFF48FB1),
       ),
-      body: RefreshIndicator(
+      body: _isLoading ? Center(child: CircularProgressIndicator()) : RefreshIndicator(
         onRefresh: _handleRefresh,
         child: SingleChildScrollView(
           child: Padding(

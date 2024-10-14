@@ -79,6 +79,7 @@ class MusicCoursesScreen extends StatefulWidget {
 }
 
 class _MusicCoursesScreenState extends BaseScreenState<MusicCoursesScreen> {
+  bool _isLoading = true;
   int _selectedIndex = 0;
   List<Course> _courses = [];
 
@@ -94,6 +95,7 @@ class _MusicCoursesScreenState extends BaseScreenState<MusicCoursesScreen> {
       setState(() {
         _courses = courses;
       });
+      _isLoading = false;
     } catch (e) {
       print('Error loading courses: $e');
     }
@@ -517,115 +519,117 @@ class _MusicCoursesScreenState extends BaseScreenState<MusicCoursesScreen> {
         backgroundColor: Color(0xFFF48FB1),
       ),
       body: Center(
-        child: Column(
+        child: _isLoading ? CircularProgressIndicator()
+        : Column(
           children: <Widget>[
-            if (_courses.isEmpty)
-              Text(
-                'Здесь будут храниться музыкальные курсы',
-                style: TextStyle(fontSize: 18),
-              ),
-            if (_courses.isNotEmpty)
-              Expanded(
-                child: ListView.builder(
-                  itemCount: _courses.length + (_courses.length ~/ 3), // Добавляем рекламные блоки
-                  itemBuilder: (context, index) {
-                    if (index % 4 == 3) {
-                      return _buildAdvertisement();
-                    } else {
-                      final course = _courses[index - (index ~/ 4)];
-                      return GestureDetector(
-                        onTap: () {
-                          _showStartCourseDialog(context, course);
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Card(
-                            elevation: 4.0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Stack(
-                                  children: [
-                                    Container(
-                                      width: double.infinity,
-                                      height: 250,
-                                      decoration: BoxDecoration(
-                                        color: Color(0xFFF596B9),
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: course.logo.isNotEmpty
-                                          ? ClipRRect(
-                                        borderRadius: BorderRadius.circular(10),
-                                        child: Image.network(
-                                          course.logo,
-                                          fit: BoxFit.cover,
+              if (_courses.isEmpty)
+                Text(
+                  'Здесь будут храниться музыкальные курсы',
+                  style: TextStyle(fontSize: 18),
+                ),
+              if (_courses.isNotEmpty)
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: _courses.length + (_courses.length ~/ 3), // Добавляем рекламные блоки
+                    itemBuilder: (context, index) {
+                      if (index % 4 == 3) {
+                        return _buildAdvertisement();
+                      } else {
+                        final course = _courses[index - (index ~/ 4)];
+                        return GestureDetector(
+                          onTap: () {
+                            _showStartCourseDialog(context, course);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Card(
+                              elevation: 4.0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Stack(
+                                    children: [
+                                      Container(
+                                        width: double.infinity,
+                                        height: 250,
+                                        decoration: BoxDecoration(
+                                          color: Color(0xFFF596B9),
+                                          borderRadius: BorderRadius.circular(10),
                                         ),
-                                      )
-                                          : Center(
-                                        child: Icon(
-                                          Icons.photo,
-                                          color: Colors.white,
-                                          size: 80,
-                                        ),
-                                      ),
-                                    ),
-                                    Positioned.fill(
-                                      child: Align(
-                                        alignment: Alignment.center,
-                                        child: Container(
-                                          width: double.infinity,
-                                          height: 200,
-                                          margin: EdgeInsets.all(20),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withOpacity(0.5),
-                                            borderRadius: BorderRadius.circular(10),
+                                        child: course.logo.isNotEmpty
+                                            ? ClipRRect(
+                                          borderRadius: BorderRadius.circular(10),
+                                          child: Image.network(
+                                            course.logo,
+                                            fit: BoxFit.cover,
                                           ),
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(16.0),
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  course.title,
-                                                  style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
-                                                ),
-                                                SizedBox(height: 10),
-                                                Flexible(
-                                                  child: Text(
-                                                    course.targetDescription,
-                                                    style: TextStyle(fontSize: 15),
-                                                    overflow: TextOverflow.clip,
-                                                    maxLines: 3,
+                                        )
+                                            : Center(
+                                          child: Icon(
+                                            Icons.photo,
+                                            color: Colors.white,
+                                            size: 80,
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned.fill(
+                                        child: Align(
+                                          alignment: Alignment.center,
+                                          child: Container(
+                                            width: double.infinity,
+                                            height: 200,
+                                            margin: EdgeInsets.all(20),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withOpacity(0.5),
+                                              borderRadius: BorderRadius.circular(10),
+                                            ),
+                                            child: Padding(
+                                              padding: const EdgeInsets.all(16.0),
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    course.title,
+                                                    style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
                                                   ),
-                                                ),
-                                                SizedBox(height: 10),
-                                                Spacer(),
-                                                Align(
-                                                  alignment: Alignment.bottomRight,
-                                                  child: _buildRating(course.rating),
-                                                ),
-                                              ],
+                                                  SizedBox(height: 10),
+                                                  Flexible(
+                                                    child: Text(
+                                                      course.targetDescription,
+                                                      style: TextStyle(fontSize: 15),
+                                                      overflow: TextOverflow.clip,
+                                                      maxLines: 3,
+                                                    ),
+                                                  ),
+                                                  SizedBox(height: 10),
+                                                  Spacer(),
+                                                  Align(
+                                                    alignment: Alignment.bottomRight,
+                                                    child: _buildRating(course.rating),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    }
-                  },
+                        );
+                      }
+                    },
+                  ),
                 ),
-              ),
-          ],
+            ],
         ),
+
       ),
       bottomNavigationBar: buildBottomNavigationBar(_selectedIndex, onItemTapped),
     );

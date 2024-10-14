@@ -83,6 +83,7 @@ class MyCoursesScreen extends StatefulWidget {
 }
 
 class _MyCoursesScreenState extends BaseScreenState<MyCoursesScreen> {
+  bool _isLoading = true;
   int _selectedIndex = 1;
   List<Course> _courses = [];
 
@@ -101,6 +102,7 @@ class _MyCoursesScreenState extends BaseScreenState<MyCoursesScreen> {
       setState(() {
         _courses = courses;
       });
+      _isLoading = false;
     } catch (e) {
       print('Error loading courses: $e');
     }
@@ -220,7 +222,7 @@ class _MyCoursesScreenState extends BaseScreenState<MyCoursesScreen> {
           backgroundColor: Color(0xFFF48FB1),
         ),
         body: Center(
-          child: Column(
+          child: _isLoading ? CircularProgressIndicator() : Column(
             children: <Widget>[
               if (_courses.isEmpty)
                 Text(

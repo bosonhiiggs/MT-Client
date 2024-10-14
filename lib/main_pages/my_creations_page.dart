@@ -84,6 +84,7 @@ class MyCreationsScreen extends StatefulWidget {
 }
 
 class _MyCreationsScreenState extends BaseScreenState<MyCreationsScreen> {
+  bool _isLoading = true;
   int _selectedIndex = 2; // установите начальный индекс вкладки "Преподавание"
   List<Course> _courses = [];
 
@@ -99,6 +100,7 @@ class _MyCreationsScreenState extends BaseScreenState<MyCreationsScreen> {
       setState(() {
         _courses = courses;
       });
+      _isLoading = false;
     } catch (e) {
       print('Error loading courses: $e');
     }
@@ -306,7 +308,7 @@ class _MyCreationsScreenState extends BaseScreenState<MyCreationsScreen> {
           ],
         ),
         body: Center(
-          child: Column(
+          child: _isLoading ? CircularProgressIndicator() : Column(
             children: <Widget>[
 
               if (_courses.isEmpty)

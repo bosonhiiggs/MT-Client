@@ -14,6 +14,7 @@ class ModerationPage extends StatefulWidget {
 }
 
 class _ModerationPageState extends BaseScreenState<ModerationPage> {
+  bool _isLoading = true;
   List<Course> _courses = [];
   int _selectedIndex = 0;
 
@@ -49,6 +50,10 @@ class _ModerationPageState extends BaseScreenState<ModerationPage> {
         }
       } catch (e) {
         // Обработка ошибок
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
@@ -98,7 +103,7 @@ class _ModerationPageState extends BaseScreenState<ModerationPage> {
         centerTitle: true,
         backgroundColor: Color(0xFFF48FB1),
       ),
-      body: Center(
+      body: _isLoading ? Center(child: CircularProgressIndicator()) : Center(
         child: Column(
           children: <Widget>[
             SizedBox(height: 16.0),
