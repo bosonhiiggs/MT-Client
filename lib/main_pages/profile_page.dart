@@ -26,7 +26,6 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
   void initState() {
     super.initState();
     _fetchUserData();
-    _isLoading = false;
   }
 
   Future<void> _fetchUserData() async {
@@ -71,6 +70,10 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
         setState(() {
           _email = 'Ошибка: ${e.toString()}';
           _fullName = 'Ошибка: ${e.toString()}';
+        });
+      } finally {
+        setState(() {
+          _isLoading = false;
         });
       }
     }
@@ -160,7 +163,7 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
         centerTitle: true,
         backgroundColor: Color(0xFFF48FB1),
       ),
-      body: _isLoading ? CircularProgressIndicator() : Column(
+      body: _isLoading ? Center(child: CircularProgressIndicator()) : Column(
         children: <Widget>[
           Expanded(
             child: Center(

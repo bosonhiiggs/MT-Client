@@ -15,6 +15,7 @@ class ModerationProfilePage extends StatefulWidget {
 }
 
 class _ModerationProfilePageState extends BaseScreenState<ModerationProfilePage> {
+  bool _isLoading = true;
   int _selectedIndex = 1;
   String _email = 'loading...';
   String _fullName = 'loading...';
@@ -67,6 +68,10 @@ class _ModerationProfilePageState extends BaseScreenState<ModerationProfilePage>
         setState(() {
           _email = 'Ошибка: ${e.toString()}';
           _fullName = 'Ошибка: ${e.toString()}';
+        });
+      } finally {
+        setState(() {
+          _isLoading = false;
         });
       }
     }
@@ -175,7 +180,7 @@ class _ModerationProfilePageState extends BaseScreenState<ModerationProfilePage>
         centerTitle: true,
         backgroundColor: Color(0xFFF48FB1),
       ),
-      body: Column(
+      body: _isLoading ? Center(child: CircularProgressIndicator()) : Column(
         children: <Widget>[
           Expanded(
             child: Center(

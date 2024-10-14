@@ -349,7 +349,6 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
     }
   }
 
-
   Future<void> _loadTaskContent(int contentId) async {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
