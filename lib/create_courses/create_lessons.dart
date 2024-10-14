@@ -29,6 +29,7 @@ class CreateLessonPage extends StatefulWidget {
 }
 
 class _CreateLessonPageState extends State<CreateLessonPage> {
+  bool _isLoading = true;
   late String _moduleName;
   late TextEditingController _moduleNameController;
   late TextEditingController _lessonTitleController;
@@ -128,6 +129,10 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
       }
     } catch (e) {
       print('Error loading lessons: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -251,7 +256,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
         centerTitle: true,
         backgroundColor: Color(0xFFF48FB1),
       ),
-      body: SingleChildScrollView(
+      body: _isLoading ? Center(child: CircularProgressIndicator()) : SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
