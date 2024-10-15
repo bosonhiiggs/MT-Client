@@ -91,6 +91,8 @@ class FullScreenVideoPlayer extends StatelessWidget {
 }
 
 class _LessonContentScreenState extends State<LessonContentScreen> {
+  bool _isLoadingComment = true;
+
   int _currentStep = 0;
   dynamic _lessonData;
   String? _theoryContent;
@@ -104,13 +106,21 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
   VideoPlayerController? _controller;
   int? _selectedAnswerIndex;
 
+  String? _commentText;
+  List<Comment> _commentsVideo = [];
+  List<Comment> _commentsTheory = [];
+  List<Comment> _commentsTest = [];
+  List<Comment> _commentsTask = [];
+
   List<Map<String, dynamic>> _steps = [];
+
+  TextEditingController _commentController = TextEditingController();
+
 
   @override
   void initState() {
     super.initState();
     _loadPreferences(); // Загружаем данные при инициализации
-
   }
 
   @override
@@ -267,7 +277,27 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
       if (response.statusCode == 200) {
         final rawData = utf8.decode(response.bodyBytes);
         final data = jsonDecode(rawData);
+
+        final commentsData = data['comments'];
+        print("Comments Data: $commentsData");
+
+        List<Comment> comments = [];
+        for (var json in commentsData) {
+          final comment = Comment.fromJson(json);
+          final userInfo = await _fetchUserInfo(comment.user);
+          final firstName = userInfo.firstname.isNotEmpty ? userInfo.firstname : userInfo.username;
+          final lastName = userInfo.lastname.isNotEmpty ? userInfo.lastname : '';
+
+          comments.add(comment.copyWith(
+            firstName: firstName,
+            lastName: lastName,
+            avatar: userInfo.avatar,
+          ));
+        }
+
         setState(() {
+          _commentsVideo = comments;
+          _isLoadingComment = false;
           _fileContent = data['item']['file'];
         });
         print("FIleCOntent: ${_fileContent}");
@@ -304,10 +334,31 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
       if (response.statusCode == 200) {
         final rawData = utf8.decode(response.bodyBytes);
         final data = jsonDecode(rawData);
+
+        final commentsData = data['comments'];
+        print("Comments Data: $commentsData");
+
+        List<Comment> comments = [];
+        for (var json in commentsData) {
+          final comment = Comment.fromJson(json);
+          final userInfo = await _fetchUserInfo(comment.user);
+          final firstName = userInfo.firstname.isNotEmpty ? userInfo.firstname : userInfo.username;
+          final lastName = userInfo.lastname.isNotEmpty ? userInfo.lastname : '';
+
+          comments.add(comment.copyWith(
+            firstName: firstName,
+            lastName: lastName,
+            avatar: userInfo.avatar,
+          ));
+        }
+
         setState(() {
+          _commentsTheory = comments;
           _theoryContent = data['item']['content'];
+          _isLoadingComment = false;
         });
         // print(_theoryContent);
+        // print("1234: $_comments");
       } else {
         print('Failed to load Theory Text');
         print('Response code: ${response.statusCode}');
@@ -336,7 +387,26 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
       if (response.statusCode == 200) {
         final rawData = utf8.decode(response.bodyBytes);
         final data = jsonDecode(rawData);
+        final commentsData = data['comments'];
+        print("Comments Data: $commentsData");
+
+        List<Comment> comments = [];
+        for (var json in commentsData) {
+          final comment = Comment.fromJson(json);
+          final userInfo = await _fetchUserInfo(comment.user);
+          final firstName = userInfo.firstname.isNotEmpty ? userInfo.firstname : userInfo.username;
+          final lastName = userInfo.lastname.isNotEmpty ? userInfo.lastname : '';
+
+          comments.add(comment.copyWith(
+            firstName: firstName,
+            lastName: lastName,
+            avatar: userInfo.avatar,
+          ));
+        }
+
         setState(() {
+          _commentsTest = comments;
+          _isLoadingComment = false;
           _questionText = data['item']['text'];
           _testAnswers = data['item']['answers'];
         });
@@ -368,7 +438,27 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
       if (response.statusCode == 200) {
         final rawData = utf8.decode(response.bodyBytes);
         final data = jsonDecode(rawData);
+
+        final commentsData = data['comments'];
+        print("Comments Data: $commentsData");
+
+        List<Comment> comments = [];
+        for (var json in commentsData) {
+          final comment = Comment.fromJson(json);
+          final userInfo = await _fetchUserInfo(comment.user);
+          final firstName = userInfo.firstname.isNotEmpty ? userInfo.firstname : userInfo.username;
+          final lastName = userInfo.lastname.isNotEmpty ? userInfo.lastname : '';
+
+          comments.add(comment.copyWith(
+            firstName: firstName,
+            lastName: lastName,
+            avatar: userInfo.avatar,
+          ));
+        }
+
         setState(() {
+          _commentsTask = comments;
+          _isLoadingComment = false;
           // _questionText = data['item']['text'];
           _taskContent = data['item']['description'];
         });
@@ -507,11 +597,6 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
         final reviewData = jsonDecode(reviewResponse.body);
         if (reviewData['is_correct'] != null) {
           final rating = reviewData['is_correct'];
-          // if (mounted) {
-          //   setState(() {
-          //     _ratingMessage = "\n$rating"; // Добавляем оценку к сообщению
-          //   });
-          // }
           if (rating) {
             setState(() {
               _ratingMessage = true;
@@ -525,6 +610,107 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
       }
     } catch (e) {
       print("Error check review: $e");
+    }
+  }
+
+  Future<void> _submitComment(int contentId, String type) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? sessionid = prefs.getString('sessionid');
+    String? csrfToken = prefs.getString('csrftoken');
+    print("Push button for comments");
+    if (sessionid == null || csrfToken == null) return;
+
+    // Construct the URL
+    final url = 'http://80.90.187.60:8001/api/mycourses/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/comments/';
+    print(url);
+
+    // Construct the request body
+    final requestBody = json.encode({
+      'text': _commentText
+    });
+    print('Request body: $requestBody'); // Debugging information
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Cookie': 'sessionid=$sessionid; csrftoken=$csrfToken',
+          'X-CSRFToken': csrfToken!,
+        },
+        body: requestBody,
+      );
+
+      print('Response status: ${response.statusCode}'); // Debugging information
+      print('Response body: ${response.body}'); // Debugging information
+
+      if (response.statusCode == 201) {
+        final rawData = utf8.decode(response.bodyBytes);
+        final data = json.decode(rawData);
+        print('Decoded data: $data'); // Debugging information
+
+        final userId = data['author'];
+        final userInfo = await _fetchUserInfo(userId);
+
+        Comment newComment = Comment.fromJson(data).copyWith(
+          firstName: userInfo.firstname.isNotEmpty
+              ? userInfo.firstname
+              : userInfo.username,
+          lastName: userInfo.lastname,
+          avatar: userInfo.avatar,
+        );
+
+        if (type == 'Video') {
+          setState(() {
+            _commentsVideo.add(newComment);
+            _commentText = '';
+          });
+        } else if (type == 'Theory') {
+          setState(() {
+            _commentsTheory.add(newComment);
+            _commentText = '';
+          });
+        } else if (type == 'Test') {
+          setState(() {
+            _commentsTest.add(newComment);
+            _commentText = '';
+          });
+        }  else if (type == 'Task') {
+          setState(() {
+            _commentsTask.add(newComment);
+            _commentText = '';
+          });
+        }
+        _commentController.clear();
+        print(
+            'Comment submitted successfully: $newComment'); // Debugging information
+      } else {
+        print('Failed to submit comment: ${response.statusCode}'); // Debugging information
+        print('Response body: ${response.body}'); // Debugging information
+      }
+    } catch (e) {
+      print('Error submitting comment: $e'); // Debugging information
+    }
+  }
+
+  Future<UserInfo> _fetchUserInfo(int userId) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? sessionid = prefs.getString('sessionid');
+    final url = 'http://80.90.187.60:8001/api/user/$userId/';
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Cookie': 'sessionid=$sessionid',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final rawData = utf8.decode(response.bodyBytes);
+      final data = json.decode(rawData);
+      return UserInfo.fromJson(data);
+    } else {
+      throw Exception('Failed to load user info');
     }
   }
 
@@ -555,13 +741,16 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
           ),
         ],
       ),
-      body: Column(
+
+      body: SingleChildScrollView(
+        child: Column(
         children: [
           _buildStepContent(),
-          Spacer(), // Добавляем Spacer для перемещения кнопок вниз
-          _buildNavigationButtons(),
+          // Spacer(), // Добавляем Spacer для перемещения кнопок вниз
+
         ],
       ),
+    ),
     );
   }
 
@@ -581,12 +770,10 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
       case 'file':
         return _buildVideoStep();
       case 'text':
-        print('Step text: ${currentStepData['data']}');
         return _buildTheoryStep();
       case 'question':
         return _buildTestStep();
       case 'task':
-        // print('task');
         return _buildHomeworkStep();
       default:
         return Container();
@@ -594,6 +781,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
   }
 
   Widget _buildVideoStep() {
+    final currentContentId = _steps[_currentStep]['id'];
     return Column(
       children: [
         AppBar(
@@ -604,7 +792,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
 
         if (_controller != null && _controller!.value.isInitialized)
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            padding: const EdgeInsets.all(16.0),
             child: Container(
               height: 300,
               width: double.infinity,
@@ -654,26 +842,53 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
           )
         else
           CircularProgressIndicator(),
+
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              SizedBox(height: 15),
+              _buildNavigationButtons(),
+              _buildCommentSection(currentContentId, _commentsVideo, 'Video'),
+            ],
+
+          ),
+        )
       ],
     );
   }
 
   Widget _buildTheoryStep() {
+    final currentContentId = _steps[_currentStep]['id'];
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AppBar(
           title: Text('Теория'),
           automaticallyImplyLeading: false,
           centerTitle: true,
         ),
-        _theoryContent != null
-            ? Text(_theoryContent!)
-            : CircularProgressIndicator(),
+
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              _theoryContent != null
+                  ? Text(_theoryContent!)
+                  : CircularProgressIndicator(),
+              SizedBox(height: 15),
+              _buildNavigationButtons(),
+              _buildCommentSection(currentContentId, _commentsTheory, 'Theory'),
+            ],
+
+          ),
+        )
       ],
     );
   }
 
   Widget _buildTestStep() {
+    final currentContentId = _steps[_currentStep]['id'];
     return SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -731,6 +946,17 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
               ],
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                SizedBox(height: 15),
+                _buildNavigationButtons(),
+                _buildCommentSection(currentContentId, _commentsTest, 'Test'),
+              ],
+
+            ),
+          )
         ],
       ),
     );
@@ -807,6 +1033,17 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
             ],
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              SizedBox(height: 15),
+              _buildNavigationButtons(),
+              _buildCommentSection(currentContentId, _commentsTask, 'Task'),
+            ],
+
+          ),
+        )
       ],
     );
   }
@@ -870,6 +1107,181 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
                 minimumSize: Size(150, 50),
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommentSection(int contentId, List<dynamic> comments, String type) {
+    print("_isLoadingComment: ${_isLoadingComment}");
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Комментарии',
+              style: TextStyle(fontSize: 24),
+            ),
+          ],
+        ),
+        SizedBox(height: 16.0),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _commentController,
+                decoration: InputDecoration(
+                  hintText: 'Оставьте комментарий...',
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFFF48FB1)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFFF48FB1)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFFF48FB1)),
+                  ),
+                  suffixIcon: IconButton(
+                    icon: Icon(Icons.send),
+                    color: Color(0xFFF48FB1),
+                    onPressed: () => _submitComment(contentId, type),
+                    // onPressed: null,
+                  ),
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    _commentText = value;
+                  });
+                },
+                // controller: TextEditingController(text: _commentText),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 16.0),
+
+        if (_isLoadingComment)
+          Center(child: CircularProgressIndicator())
+        else if (comments.isEmpty)
+          Center(
+            child: Text(
+              'Комментарии отсутствуют',
+              style: TextStyle(fontSize: 18),
+            ),
+          )
+        else
+          ListView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            itemCount: comments.length,
+            itemBuilder: (context, index) {
+              // final comment = _comments[index];
+              final comment = comments.reversed.toList()[index];
+              return CommentTile(comment: comment);
+            },
+          ),
+
+      ],
+    );
+  }
+}
+
+class Comment {
+  final int id;
+  final int user;
+  final String firstName;
+  final String lastName;
+  final String avatar;
+  final String text;
+
+  Comment({
+    required this.id,
+    required this.user,
+    required this.firstName,
+    required this.lastName,
+    required this.avatar,
+    required this.text,
+  });
+
+  factory Comment.fromJson(Map<String, dynamic> json) {
+    return Comment(
+      id: json['id'] ?? 0,
+      user: json['author'] ?? '',
+      firstName: json['first_name'] ?? '',
+      lastName: json['last_name'] ?? '',
+      avatar: json['avatar'] ?? '',
+      text: json['text'] ?? '',
+    );
+  }
+
+  Comment copyWith({
+    int? id,
+    int? user,
+    String? firstName,
+    String? lastName,
+    String? avatar,
+    String? text,
+  }) {
+    return Comment(
+      id: id ?? this.id,
+      user: user ?? this.user,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      avatar: avatar ?? this.avatar,
+      text: text ?? this.text,
+    );
+  }
+}
+
+class CommentTile extends StatelessWidget {
+  final Comment comment;
+
+  CommentTile({required this.comment});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 16.0),
+      padding: EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.5),
+            spreadRadius: 2,
+            blurRadius: 5,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            backgroundImage: NetworkImage(comment.avatar),
+            radius: 24,
+          ),
+          SizedBox(width: 16.0),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${comment.firstName} ${comment.lastName}',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8.0),
+                Text(
+                  comment.text,
+                  style: TextStyle(fontSize: 14),
+                ),
+                SizedBox(height: 8.0),
+              ],
+            ),
+          ),
         ],
       ),
     );

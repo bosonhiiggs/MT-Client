@@ -57,6 +57,8 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   String _userLastName = '';
   String _courseSlug = '';
 
+  TextEditingController _reviewController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -289,6 +291,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           _commentText = '';
           _rating = 1;
         });
+        _reviewController.clear();
         print(
             'Comment submitted successfully: $newComment'); // Debugging information
       } else if (response.statusCode == 500) {
@@ -477,7 +480,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Комментарии',
+              'Отзывы',
               style: TextStyle(fontSize: 24),
             ),
             Row(
@@ -502,8 +505,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           children: [
             Expanded(
               child: TextField(
+                controller: _reviewController,
                 decoration: InputDecoration(
-                  hintText: 'Оставьте комментарий...',
+                  hintText: 'Оставьте отзыв...',
                   border: OutlineInputBorder(
                     borderSide: BorderSide(color: Color(0xFFF48FB1)),
                   ),
