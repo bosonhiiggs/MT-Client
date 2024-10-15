@@ -30,7 +30,7 @@ class _EditUserPageState extends State<EditUserPage> {
   TextEditingController _firstNameController = TextEditingController();
   TextEditingController _lastNameController = TextEditingController();
   TextEditingController _usernameController = TextEditingController();
-  TextEditingController _emailController = TextEditingController();
+  // TextEditingController _emailController = TextEditingController();
 
   @override
   void initState() {
@@ -72,7 +72,7 @@ class _EditUserPageState extends State<EditUserPage> {
           _firstNameController.text = firstName;
           _lastNameController.text = lastName;
           _usernameController.text = username;
-          _emailController.text = email;
+          // _emailController.text = email;
         });
       } else {
         print('Не удалось загрузить данные пользователя. Код статуса: ${response.statusCode}');
@@ -136,9 +136,9 @@ class _EditUserPageState extends State<EditUserPage> {
       if (_lastNameController.text != lastName) {
         request.fields['last_name'] = _lastNameController.text;
       }
-      if (_emailController.text != email) {
-        request.fields['email'] = _emailController.text;
-      }
+      // if (_emailController.text != email) {
+      //   request.fields['email'] = _emailController.text;
+      // }
 
       if (_image != null) {
         var avatarFile = await http.MultipartFile.fromPath('avatar', _image!.path);
@@ -263,6 +263,12 @@ class _EditUserPageState extends State<EditUserPage> {
                 ],
               ),
             ),
+            SizedBox(height: 16.0,),
+            Text(email, style: TextStyle(
+                  fontSize: 18.0,
+                  color: Colors.black,
+                  ),
+            ),
             SizedBox(height: 16.0),
             buildTextField('Имя', _firstNameController, false),
             SizedBox(height: 16.0),
@@ -270,8 +276,8 @@ class _EditUserPageState extends State<EditUserPage> {
             SizedBox(height: 16.0),
             buildTextField('Имя пользователя', _usernameController, false),
             SizedBox(height: 16.0),
-            buildTextField('e-mail', _emailController, false),
-            SizedBox(height: 16.0),
+            // buildTextField('e-mail', _emailController, false),
+            // SizedBox(height: 16.0),
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

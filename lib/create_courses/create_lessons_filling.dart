@@ -556,7 +556,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
     try {
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
-
+      print("Send video status code: ${response.statusCode}");
       if (response.statusCode == 200) {
         print('Video sent successfully');
       } else {
@@ -1131,12 +1131,22 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
               );
 
               if (file != null) {
-                setState(() {
-                  videoFile = file.files.first;
-                  _isNewVideoAdded = true;
-                  _isVideoDeleted = false;
-                });
-                await _initializeController();
+                final maxSize = 500 * 1024 * 1024;
+                final pickedFile = file.files.first;
+                final fileSize = pickedFile.size;
+
+                if (fileSize > maxSize) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Упс... Максимальный размер файла 500Мб.'))
+                  );
+                } else {
+                  setState(() {
+                    videoFile = file.files.first;
+                    _isNewVideoAdded = true;
+                    _isVideoDeleted = false;
+                  });
+                  await _initializeController();
+                }
               }
             },
           ),
