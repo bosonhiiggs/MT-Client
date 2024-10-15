@@ -548,10 +548,11 @@ class _LessonReviewScreenState extends State<LessonReviewScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _questionText != null ?
                 Text(
                   'Тестовый вопрос: $_questionText',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
+                ) : Center(child: CircularProgressIndicator()),
                 SizedBox(height: 20),
                 ListView.builder(
                   shrinkWrap: true,
@@ -621,7 +622,9 @@ class _LessonReviewScreenState extends State<LessonReviewScreen> {
           centerTitle: true,
         ),
         // Здесь вы можете добавить виджет для отображения домашнего задания
-        Text("$_taskContent", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        _taskContent != null
+            ? Text("$_taskContent", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))
+            : Center(child: CircularProgressIndicator()),
       ],
     );
   }
