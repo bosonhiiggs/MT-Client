@@ -26,6 +26,8 @@ class CreateCoursePage3 extends StatefulWidget {
 }
 
 class _CreateCoursePage3State extends State<CreateCoursePage3> {
+  String _courseName = '';
+  String _CourseLogoPath = '';
   bool _isLoading = true;
   final _formKey = GlobalKey<FormState>();
   String? _sessionId;
@@ -57,6 +59,48 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
 
     if (_courseSlug != null) {
       _fetchModules(); // Обновление модуля после загрузки предпочтений
+      _fetchCourseData(); // Обновление модуля после загрузки предпочтений
+    }
+  }
+
+  Future<void> _fetchCourseData() async {
+    if (_courseSlug == null) return;
+
+    final url = 'http://80.90.187.60:8001/api/mycreations/create/$_courseSlug/';
+    print('Fetching modules from: $url');
+
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': 'sessionid=$_sessionId; csrftoken=$_csrfToken',
+          'X-CSRFToken': _csrfToken!,
+        },
+      );
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        print('Decoded data: $data');
+
+        setState(() {
+          _courseName = data['title'];
+          _CourseLogoPath = data['logo'];
+        });
+        print('Course data fetched successfully: $_modules');
+      } else {
+        print('Failed to fetch course data: ${response.statusCode}');
+        print('Response body: ${response.body}');
+      }
+    } catch (e) {
+      print('Error fetching modules: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -235,12 +279,12 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                         color: Color(0xFFF596B9),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: widget.courseImagePath != null && widget.courseImagePath!.isNotEmpty
-                          ? widget.courseImagePath!.startsWith('http')
+                      child: _CourseLogoPath != null && _CourseLogoPath.isNotEmpty
+                          ? _CourseLogoPath.startsWith('http')
                           ? ClipRRect(
                         borderRadius: BorderRadius.circular(10),
                         child: Image.network(
-                          widget.courseImagePath!,
+                          _CourseLogoPath,
                           fit: BoxFit.cover,
                         ),
                       )
@@ -286,7 +330,8 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
                                 children: [
                                   // Название курса
                                   Text(
-                                    widget.courseName,
+                                    _courseName,
+                                    // widget.courseName,
                                     style: TextStyle(
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold,
