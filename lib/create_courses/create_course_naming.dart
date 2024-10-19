@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:appmetrica_plugin/appmetrica_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -278,6 +279,7 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
                         if (_formKey.currentState!.validate()) {
                           _formKey.currentState!.save();
                           _sendCourseData(); // Отправляем данные на сервер
+                          AppMetrica.reportEvent('Создание курса');
                         }
                       },
                     ),

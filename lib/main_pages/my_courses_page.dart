@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:appmetrica_plugin/appmetrica_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../complete_the_course/course_details_screen.dart';
@@ -152,10 +153,12 @@ class _MyCoursesScreenState extends BaseScreenState<MyCoursesScreen> {
   Future<void> _navigateToCourseDetails(BuildContext context, Course course) async {
 
     if (course.approval) {
+      AppMetrica.reportEvent('Прохождение курса');
       Navigator.push(
         context,
         MaterialPageRoute(
             builder: (context) => CourseDetailsScreen(course: course)),
+
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

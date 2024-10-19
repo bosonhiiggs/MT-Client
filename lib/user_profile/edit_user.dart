@@ -1,3 +1,4 @@
+import 'package:appmetrica_plugin/appmetrica_plugin.dart';
 import 'package:client/user_profile/verify_code_page.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -286,9 +287,11 @@ class _EditUserPageState extends State<EditUserPage> {
                   child: ElevatedButton(
                     onPressed: () {
                       _updateUserData();
+                      AppMetrica.reportEvent('Редактирование профиля');
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => ProfilePage()),
+
                       );
                     },
                     child: Text('Сохранить изменения'),

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:appmetrica_plugin/appmetrica_plugin.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -526,6 +527,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                 onChanged: (value) {
                   setState(() {
                     _commentText = value;
+                    AppMetrica.reportEvent('Отзыв и комментарий к курсу');
                   });
                 },
               ),

@@ -196,6 +196,7 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => EditUserPage()),
+
                       );
                     },
                     child: Text('Редактировать профиль'),
