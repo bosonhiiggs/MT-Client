@@ -10,7 +10,6 @@ import '../homework/homework_check_page.dart';
 import 'profile_page.dart';
 import 'music_courses_page.dart';
 import 'my_courses_page.dart';
-import '../create_courses/create_course.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 

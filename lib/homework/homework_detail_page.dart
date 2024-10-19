@@ -102,7 +102,7 @@ class HomeworkAnswersList extends StatelessWidget {
         } else if (snapshot.hasError) {
           return Center(child: Text('Error: ${snapshot.error}'));
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(child: Text('No answers available'));
+          return Center(child: Text('Нет домашнего задания на проверку'));
         } else {
           return FutureBuilder<List<String>>(
             future: Future.wait(

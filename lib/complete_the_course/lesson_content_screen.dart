@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:appmetrica_plugin/appmetrica_plugin.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -1153,6 +1154,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
                 onChanged: (value) {
                   setState(() {
                     _commentText = value;
+                    AppMetrica.reportEvent('Комментарий к этапу урока');
                   });
                 },
                 // controller: TextEditingController(text: _commentText),

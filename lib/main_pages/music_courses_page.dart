@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:appmetrica_plugin/appmetrica_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../base/base_screen_state.dart';
@@ -279,6 +280,7 @@ class _MusicCoursesScreenState extends BaseScreenState<MusicCoursesScreen> {
                                     await _purchaseCourse(course);
                                     Navigator.of(context).pop();
                                     _navigateToMyCourses(context, course);
+                                    AppMetrica.reportEvent('Приобретение курса');
                                   },
                                   style: ElevatedButton.styleFrom(
                                     foregroundColor: Colors.white,
