@@ -106,7 +106,7 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
       } else {
         // Ошибка создания курса
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка создания курса. Попробуйте снова.')),
+          SnackBar(content: Text('Упс.. Курс с таким именем уже есть')),
         );
       }
     } catch (e) {
