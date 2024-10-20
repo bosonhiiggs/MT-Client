@@ -231,6 +231,7 @@ class _MyCoursesScreenState extends BaseScreenState<MyCoursesScreen> {
                 Text(
                   'Здесь будут храниться курсы, которые вы проходите',
                   style: TextStyle(fontSize: 18),
+                  textAlign: TextAlign.center,
                 ),
               if (_courses.isNotEmpty)
                 Expanded(

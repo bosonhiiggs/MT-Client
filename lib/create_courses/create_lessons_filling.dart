@@ -361,7 +361,6 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
     }
   }
 
-
   Future<void> _sendTextToServer() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     final sessionId = prefs.getString('sessionid');

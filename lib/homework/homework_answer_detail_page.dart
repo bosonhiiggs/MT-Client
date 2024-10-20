@@ -19,171 +19,8 @@ class HomeworkAnswerDetailPage extends StatefulWidget {
   _HomeworkAnswerDetailPageState createState() => _HomeworkAnswerDetailPageState();
 }
 
-// class _HomeworkAnswerDetailPageState extends State<HomeworkAnswerDetailPage> {
-//   Map<String, dynamic>? homeworkDetails;
-//
-//   @override
-//   void initState() {
-//     super.initState();
-//     fetchHomeworkDetails();
-//   }
-//
-//   Future<void> fetchHomeworkDetails() async {
-//     SharedPreferences prefs = await SharedPreferences.getInstance();
-//     String? sessionId = prefs.getString('sessionid');
-//
-//     final url = 'http://80.90.187.60:8001/api/mycreations/tasks/${widget.answer.taskId}/${widget.answer.id}/';
-//
-//     try {
-//       final response = await http.get(
-//         Uri.parse(url),
-//         headers: {
-//           'Content-Type': 'application/json; charset=UTF-8',
-//           'Cookie': 'sessionid=$sessionId',
-//         },
-//       );
-//
-//       if (response.statusCode == 200) {
-//         setState(() {
-//           homeworkDetails = json.decode(response.body);
-//         });
-//       } else {
-//         throw Exception('Failed to load homework details');
-//       }
-//     } catch (e) {
-//       print('Error fetching homework details: $e');
-//     }
-//   }
-//
-//   Future<void> submitAssessment(bool isCorrect) async {
-//     SharedPreferences prefs = await SharedPreferences.getInstance();
-//     String? sessionId = prefs.getString('sessionid');
-//
-//     final url = 'http://80.90.187.60:8001/api/mycreations/tasks/${widget.answer.taskId}/${widget.answer.id}/';
-//     final body = json.encode({
-//       "is_correct": isCorrect.toString(),
-//       "comment": "optional", // здесь можно добавить комментарий, если нужно
-//     });
-//
-//     try {
-//       final response = await http.post(
-//         Uri.parse(url),
-//         headers: {
-//           'Content-Type': 'application/json; charset=UTF-8',
-//           'Cookie': 'sessionid=$sessionId',
-//         },
-//         body: body,
-//       );
-//
-//       if (response.statusCode == 200) {
-//         print('Assessment submitted successfully');
-//       } else {
-//         throw Exception('Failed to submit assessment');
-//       }
-//     } catch (e) {
-//       print('Error submitting assessment: $e');
-//     }
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('Ответ на домашнее задание'),
-//         backgroundColor: Color(0xFFF48FB1),
-//       ),
-//       body: Padding(
-//         padding: const EdgeInsets.all(16.0),
-//         child: homeworkDetails == null
-//             ? Center(child: CircularProgressIndicator())
-//             : Column(
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: [
-//             Text(
-//               'Файл:',
-//               style: TextStyle(fontSize: 16),
-//             ),
-//             SizedBox(height: 5),
-//             ElevatedButton(
-//               onPressed: () async {
-//                 final fileUrl = homeworkDetails!['file'].replaceFirst('http://80.90.187.60/', 'http://80.90.187.60:8001/');
-//                 try {
-//                   // Получаем директорию "Загрузки"
-//                   Directory? downloadsDirectory;
-//                   if (Platform.isAndroid) {
-//                     downloadsDirectory = Directory('/storage/emulated/0/Download');
-//                   }
-//
-//                   String fileName = fileUrl.split('/').last;
-//                   if (downloadsDirectory != null) {
-//                     String filePath = '${downloadsDirectory.path}/$fileName'; // Задайте нужное имя файла
-//
-//                     // Скачиваем файл
-//                     await Dio().download(fileUrl, filePath);
-//                     print('File downloaded to: $filePath');
-//
-//                     showDialog(
-//                       context: context,
-//                       builder: (BuildContext context) {
-//                         return AlertDialog(
-//                           title: Text('Скачивание завершено'),
-//                           content: Text('Файл сохранен по пути: $filePath'),
-//                           actions: [
-//                             TextButton(
-//                               onPressed: () {
-//                                 Navigator.of(context).pop(); // Закрыть диалог
-//                               },
-//                               child: Text('OK'),
-//                             ),
-//                           ],
-//                         );
-//                       },
-//                     );
-//                   }
-//                 } catch (e) {
-//                   print('Error downloading file: $e');
-//                 }
-//               },
-//               style: ElevatedButton.styleFrom(
-//                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-//                 backgroundColor: Colors.blue, // Цвет фона
-//               ),
-//               child: Text(
-//                 'Скачать файл',
-//                 style: TextStyle(color: Colors.white), // Цвет текста
-//               ),
-//             ),
-//             Spacer(),
-//             Row(
-//               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-//               children: [
-//                 ElevatedButton(
-//                   onPressed: () => submitAssessment(true),
-//                   style: ElevatedButton.styleFrom(
-//                     backgroundColor: Colors.green,
-//                     padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-//                   ),
-//                   child: Text('Правильно'),
-//                 ),
-//                 ElevatedButton(
-//                   onPressed: () => submitAssessment(false),
-//                   style: ElevatedButton.styleFrom(
-//                     backgroundColor: Colors.red,
-//                     padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-//                   ),
-//                   child: Text('Неправильно'),
-//                 ),
-//               ],
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-//
-// }
-
 class _HomeworkAnswerDetailPageState extends State<HomeworkAnswerDetailPage> {
+  bool _isLoading = false;
   Map<String, dynamic>? homeworkDetails;
   Map<String, dynamic>? userInfo;
 
@@ -326,6 +163,7 @@ class _HomeworkAnswerDetailPageState extends State<HomeworkAnswerDetailPage> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -339,57 +177,98 @@ class _HomeworkAnswerDetailPageState extends State<HomeworkAnswerDetailPage> {
             : Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            CircleAvatar(
-              backgroundImage: NetworkImage(userInfo!['avatar']),
-              radius: 200, // Увеличиваем радиус аватарки
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center, // Центрируем элементы по вертикали
+              children: [
+                // Аватарка слева
+                CircleAvatar(
+                  backgroundImage: NetworkImage(userInfo!['avatar']),
+                  radius: 50, // Задаем радиус аватарки
+                ),
+                SizedBox(width: 20), // Отступ между аватаркой и текстом
+
+                // Данные пользователя справа от аватарки
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start, // Текст будет выравниваться по левому краю
+                  children: [
+                    Text(
+                      userInfo!['first_name'] != null && userInfo!['last_name'] != null
+                          ? '${userInfo!['first_name']} ${userInfo!['last_name']}'
+                          : userInfo!['username'],
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 5), // Отступ между именем и остальной информацией
+                    Text(
+                      'Email: ${userInfo!['email']}', // Например, email или другой текст
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            SizedBox(height: 20), // Отступ перед следующими элементами
+
+            Text('Чтобы скачать файл, прикрепленный учеником, нажмите на кнопку:',
+              style: TextStyle(fontSize: 16)
             ),
             SizedBox(height: 10),
-            Text(
-              userInfo!['first_name'] != null && userInfo!['last_name'] != null
-                  ? '${userInfo!['first_name']} ${userInfo!['last_name']}'
-                  : userInfo!['username'],
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center, // Центрируем текст
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () async {
-                final fileUrl = homeworkDetails!['file'].replaceFirst('http://80.90.187.60/', 'http://80.90.187.60:8001/');
-                try {
-                  Directory? downloadsDirectory;
-                  if (Platform.isAndroid) {
-                    downloadsDirectory = Directory('/storage/emulated/0/Download');
-                  }
 
-                  String fileName = fileUrl.split('/').last;
-                  if (downloadsDirectory != null) {
-                    String filePath = '${downloadsDirectory.path}/$fileName';
+            // Если загрузка файла идет, показываем CircularProgressIndicator вместо кнопки
+            _isLoading
+                ? CircularProgressIndicator() // Анимация загрузки
+                : ElevatedButton(
+                onPressed: () async {
+                  setState(() {
+                    _isLoading = true; // Начало загрузки, показываем индикатор
+                  });
 
-                    await Dio().download(fileUrl, filePath);
-                    print('File downloaded to: $filePath');
+                  final fileUrl = Uri.decodeFull(homeworkDetails!['file'].replaceFirst('http://80.90.187.60/', 'http://80.90.187.60:8001/'));
+                  try {
+                    Directory? downloadsDirectory;
+                    if (Platform.isAndroid) {
+                      downloadsDirectory = Directory('/storage/emulated/0/Download');
+                    }
 
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text('Скачивание завершено'),
-                          content: Text('Файл сохранен по пути: $filePath'),
-                          actions: [
-                            TextButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                              child: Text('OK'),
-                            ),
-                          ],
+                    String fileName = fileUrl.split('/').last;
+                    if (downloadsDirectory != null) {
+                      String filePath = '${downloadsDirectory.path}/$fileName';
+
+                      await Dio().download(fileUrl, filePath);
+                      print('File downloaded to: $filePath');
+
+                      // Задерживаем выполнение до завершения текущего фрейма
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        setState(() {
+                          _isLoading = false; // Завершаем загрузку, прячем индикатор
+                        });
+
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text('Скачивание завершено'),
+                              content: Text('Файл сохранен по пути: $filePath'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: Text('OK'),
+                                ),
+                              ],
+                            );
+                          },
                         );
-                      },
-                    );
+                      });
+                    }
+                  } catch (e) {
+                    setState(() {
+                      _isLoading = false; // В случае ошибки также скрываем индикатор
+                    });
+                    print('Error downloading file: $e');
                   }
-                } catch (e) {
-                  print('Error downloading file: $e');
-                }
-              },
+                },
+
               style: ElevatedButton.styleFrom(
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 backgroundColor: Colors.blue,
@@ -400,6 +279,8 @@ class _HomeworkAnswerDetailPageState extends State<HomeworkAnswerDetailPage> {
               ),
             ),
             Spacer(),
+
+            // Кнопки для оценки работы
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -414,7 +295,7 @@ class _HomeworkAnswerDetailPageState extends State<HomeworkAnswerDetailPage> {
                 ElevatedButton(
                   onPressed: () => submitAssessment(false),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
+                    backgroundColor: Colors.deepOrange,
                     padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                   ),
                   child: Text('Неправильно'),
@@ -426,5 +307,7 @@ class _HomeworkAnswerDetailPageState extends State<HomeworkAnswerDetailPage> {
       ),
     );
   }
+
+
 
 }

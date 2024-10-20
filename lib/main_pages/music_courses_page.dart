@@ -528,6 +528,7 @@ class _MusicCoursesScreenState extends BaseScreenState<MusicCoursesScreen> {
                 Text(
                   'Здесь будут храниться музыкальные курсы',
                   style: TextStyle(fontSize: 18),
+                  textAlign: TextAlign.center,
                 ),
               if (_courses.isNotEmpty)
                 Expanded(

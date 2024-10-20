@@ -314,6 +314,7 @@ class _MyCreationsScreenState extends BaseScreenState<MyCreationsScreen> {
                 Text(
                   'Здесь будут храниться созданные вами курсы',
                   style: TextStyle(fontSize: 18),
+                  textAlign: TextAlign.center,
                 ),
               if (_courses.isNotEmpty)
                 Expanded(

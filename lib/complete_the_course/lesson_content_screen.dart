@@ -529,7 +529,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
     } catch (e) {
       print('Ошибка отправки файла: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Произошла ошибка. Попробуйте еще раз.')),
+        SnackBar(content: Text('Произошла ошибка. Файл скорее всего прикреплен.')),
       );
     }
   }
@@ -561,11 +561,11 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
         if (data['file'] != null) {
           if (mounted) {
             setState(() {
-              _selectedFilePath = data['file'];
+              _selectedFilePath = Uri.decodeFull(data['file']);
               _submissionMessage =
               "Файл на сервере: ${_selectedFilePath!.split('/').last}";
             });
-            // print("Путь до ДЗ$_selectedFilePath");
+            print("Путь до ДЗ$_selectedFilePath");
           }
           await _checkReview(currentContentId, headers);
         } else {

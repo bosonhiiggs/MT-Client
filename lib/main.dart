@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:appmetrica_plugin/appmetrica_plugin.dart';
 import 'package:http/http.dart' as http;
+import ' authorization/email_confirmation_screen.dart';
 import ' authorization/password_recovery_screen.dart';
 import ' authorization/registration_screen.dart';
 import 'main_pages/music_courses_page.dart';
@@ -167,6 +168,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 'Произошла ошибка. Не удалось извлечь sessionID или csrfToken.')),
           );
         }
+      }
+      else if (response.statusCode == 201) {
+        final rawData = utf8.decode(response.bodyBytes);
+        final data = jsonDecode(rawData);
+        final email = data['email'];
+        print(email);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PasswordRecoveryConfirmationCodeScreen(email: email),
+          ),
+        );
       } else if (response.statusCode == 401) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Неверный логин или пароль')),
