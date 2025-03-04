@@ -47,7 +47,7 @@ class _CreateCoursePageState2 extends State<CreateCoursePage2> {
         throw Exception('Session ID или CSRF token отсутствуют');
       }
 
-      final url = 'http://80.90.187.60:8001/api/mycreations/create/free/';
+      final url = 'http://109.73.196.253:8001/api/mycreations/create/free/';
 
       var request = http.MultipartRequest(
         'POST',

@@ -42,7 +42,7 @@ class _CourseApprovalScreenState extends State<CourseApprovalScreen> {
   Future<void> _fetchModules() async {
     if (_sessionId == null) return;
 
-    final url = 'http://80.90.187.60:8001/api/mycourses/${widget.course.slug}/modules/';
+    final url = 'http://109.73.196.253:8001/api/mycourses/${widget.course.slug}/modules/';
 
     try {
       final response = await http.get(
@@ -87,7 +87,7 @@ class _CourseApprovalScreenState extends State<CourseApprovalScreen> {
   Future<void> _fetchLessonsForModule(Module module) async {
     if (_sessionId == null) return;
 
-    final url = 'http://80.90.187.60:8001/api/mycourses/${widget.course.slug}/modules/${module.id}/';
+    final url = 'http://109.73.196.253:8001/api/mycourses/${widget.course.slug}/modules/${module.id}/';
 
     try {
       final response = await http.get(
@@ -121,7 +121,7 @@ class _CourseApprovalScreenState extends State<CourseApprovalScreen> {
     // if (_sessionId == null) return;
     if (_sessionId == null || _csrfToken == null) return;
 
-    final url = 'http://80.90.187.60:8001/api/moderation/${widget.course.slug}/';
+    final url = 'http://109.73.196.253:8001/api/moderation/${widget.course.slug}/';
 
     try {
       final response = await http.patch(
@@ -147,7 +147,7 @@ class _CourseApprovalScreenState extends State<CourseApprovalScreen> {
     // Логика отклонения курса
     if (_sessionId == null || _csrfToken == null) return;
 
-    final url = 'http://80.90.187.60:8001/api/moderation/${widget.course.slug}/';
+    final url = 'http://109.73.196.253:8001/api/moderation/${widget.course.slug}/';
 
     try {
       final response = await http.patch(

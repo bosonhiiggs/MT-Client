@@ -25,7 +25,7 @@ class _EditUserPageState extends State<EditUserPage> {
   String firstName = '';
   String lastName = '';
   String email = '';
-  String avatarUrl = 'http://80.90.187.60:8001/media/users/users_default_avatar.jpg';
+  String avatarUrl = 'http://109.73.196.253:8001/media/users/users_default_avatar.jpg';
   File? _image;
 
   TextEditingController _firstNameController = TextEditingController();
@@ -50,7 +50,7 @@ class _EditUserPageState extends State<EditUserPage> {
       }
 
       final response = await http.get(
-        Uri.parse('http://80.90.187.60:8001/api/auth/aboutme/'),
+        Uri.parse('http://109.73.196.253:8001/api/auth/aboutme/'),
         headers: {
           'Cookie': 'sessionid=$sessionid; csrftoken=$csrfToken',
           'X-CSRFToken': csrfToken,
@@ -125,7 +125,7 @@ class _EditUserPageState extends State<EditUserPage> {
 
       var request = http.MultipartRequest(
         'PATCH',
-        Uri.parse('http://80.90.187.60:8001/api/auth/update/'),
+        Uri.parse('http://109.73.196.253:8001/api/auth/update/'),
       );
 
       request.headers['Cookie'] = 'sessionid=$sessionid; csrftoken=$csrfToken';
@@ -177,7 +177,7 @@ class _EditUserPageState extends State<EditUserPage> {
       }
 
       final response = await http.post(
-        Uri.parse('http://80.90.187.60:8001/api/auth/reset-request/'),
+        Uri.parse('http://109.73.196.253:8001/api/auth/reset-request/'),
         headers: {
           'Content-Type': 'application/json',
           'Cookie': 'sessionid=$sessionid; csrftoken=$csrfToken',

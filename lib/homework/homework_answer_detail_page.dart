@@ -34,7 +34,7 @@ class _HomeworkAnswerDetailPageState extends State<HomeworkAnswerDetailPage> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? sessionId = prefs.getString('sessionid');
 
-    final url = 'http://80.90.187.60:8001/api/mycreations/tasks/${widget.answer.taskId}/${widget.answer.id}/';
+    final url = 'http://109.73.196.253:8001/api/mycreations/tasks/${widget.answer.taskId}/${widget.answer.id}/';
 
     try {
       final response = await http.get(
@@ -63,7 +63,7 @@ class _HomeworkAnswerDetailPageState extends State<HomeworkAnswerDetailPage> {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? sessionId = prefs.getString('sessionid');
 
-      final url = 'http://80.90.187.60:8001/api/user/$userId/';
+      final url = 'http://109.73.196.253:8001/api/user/$userId/';
       try {
         final response = await http.get(Uri.parse(url),
         headers: {
@@ -100,7 +100,7 @@ class _HomeworkAnswerDetailPageState extends State<HomeworkAnswerDetailPage> {
       headers['X-CSRFToken'] = csrfToken;
     }
 
-    final url = 'http://80.90.187.60:8001/api/mycreations/tasks/${widget.answer.taskId}/${widget.answer.id}/';
+    final url = 'http://109.73.196.253:8001/api/mycreations/tasks/${widget.answer.taskId}/${widget.answer.id}/';
     final body = json.encode({
       "is_correct": isCorrect.toString(),
     });
@@ -222,7 +222,7 @@ class _HomeworkAnswerDetailPageState extends State<HomeworkAnswerDetailPage> {
                     _isLoading = true; // Начало загрузки, показываем индикатор
                   });
 
-                  final fileUrl = Uri.decodeFull(homeworkDetails!['file'].replaceFirst('http://80.90.187.60/', 'http://80.90.187.60:8001/'));
+                  final fileUrl = Uri.decodeFull(homeworkDetails!['file'].replaceFirst('http://109.73.196.253:8001/', 'http://109.73.196.253:8001/'));
                   try {
                     Directory? downloadsDirectory;
                     if (Platform.isAndroid) {

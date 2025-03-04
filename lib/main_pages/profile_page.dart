@@ -19,7 +19,7 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
   int _selectedIndex = 3;
   String _email = 'loading...';
   String _fullName = 'loading...';
-  String _avatarUrl = 'http://80.90.187.60:8001/media/users/users_default_avatar.jpg'; // Установите URL по умолчанию
+  String _avatarUrl = 'http://109.73.196.253:8001/media/users/users_default_avatar.jpg'; // Установите URL по умолчанию
   bool _isModerator = false;
 
   @override
@@ -35,7 +35,7 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
     if (sessionId != null) {
       try {
         final response = await http.get(
-          Uri.parse('http://80.90.187.60:8001/api/auth/aboutme/'),
+          Uri.parse('http://109.73.196.253:8001/api/auth/aboutme/'),
           headers: {
             'Content-Type': 'application/json; charset=UTF-8',
             'Cookie': 'sessionid=$sessionId',
@@ -55,8 +55,8 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
                 : 'Имя Фамилия';
             _avatarUrl = data['avatar']; // Установите URL по умолчанию, если нет аватара
             // _avatarUrl = data['avatar'] ?? 'http://example.com/default_avatar.jpg'; // Установите URL по умолчанию, если нет аватара
-            // if (_avatarUrl.startsWith('http://80.90.187.60/media/')) {
-            //    _avatarUrl = _avatarUrl.replaceFirst('http://80.90.187.60/media/', 'http://80.90.187.60:8001/media/');
+            // if (_avatarUrl.startsWith('http://109.73.196.253/media/')) {
+            //    _avatarUrl = _avatarUrl.replaceFirst('http://109.73.196.253/media/', 'http://109.73.196.253:8001/media/');
             // }
           });
         } else {
@@ -87,7 +87,7 @@ class _ProfilePageState extends BaseScreenState<ProfilePage> {
     if (sessionId != null && csrfToken != null) {
       try {
         final response = await http.get(
-          Uri.parse('http://80.90.187.60:8001/api/auth/logout/'),
+          Uri.parse('http://109.73.196.253:8001/api/auth/logout/'),
           headers: {
             'Content-Type': 'application/json',
             'Cookie': 'sessionid=$sessionId; csrftoken=$csrfToken',

@@ -66,7 +66,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
   Future<void> _fetchCourseData() async {
     if (_courseSlug == null) return;
 
-    final url = 'http://80.90.187.60:8001/api/mycreations/create/$_courseSlug/';
+    final url = 'http://109.73.196.253:8001/api/mycreations/create/$_courseSlug/';
     print('Fetching modules from: $url');
 
     try {
@@ -108,7 +108,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
 
     if (_courseSlug == null) return;
 
-    final url = 'http://80.90.187.60:8001/api/mycreations/create/$_courseSlug/modules/';
+    final url = 'http://109.73.196.253:8001/api/mycreations/create/$_courseSlug/modules/';
     print('Fetching modules from: $url');
 
     try {
@@ -153,7 +153,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
   Future<void> _createModule(String moduleTitle) async {
     if (_courseSlug == null) return;
 
-    final url = 'http://80.90.187.60:8001/api/mycreations/create/$_courseSlug/modules/';
+    final url = 'http://109.73.196.253:8001/api/mycreations/create/$_courseSlug/modules/';
     print('Creating module at: $url');
 
     // Если название модуля пустое, используем "Новый модуль"
@@ -200,7 +200,7 @@ class _CreateCoursePage3State extends State<CreateCoursePage3> {
   Future<void> _deleteModule(String moduleId) async {
     if (_courseSlug == null || moduleId.isEmpty) return;
 
-    final url = 'http://80.90.187.60:8001/api/mycreations/create/$_courseSlug/modules/$moduleId';
+    final url = 'http://109.73.196.253:8001/api/mycreations/create/$_courseSlug/modules/$moduleId';
     print('Deleting module at: $url');
 
     try {

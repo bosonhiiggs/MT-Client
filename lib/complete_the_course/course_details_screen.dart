@@ -84,7 +84,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   Future<void> _fetchModules() async {
     if (_sessionId == null || _csrfToken == null) return;
 
-    final url = 'http://80.90.187.60:8001/api/mycourses/${widget.course.slug}/modules/';
+    final url = 'http://109.73.196.253:8001/api/mycourses/${widget.course.slug}/modules/';
     print('Fetching modules from: $url');
 
     try {
@@ -135,7 +135,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   Future<void> _fetchLessonsForModule(Module module) async {
     if (_sessionId == null || _csrfToken == null) return;
 
-    final url = 'http://80.90.187.60:8001/api/mycourses/${widget.course.slug}/modules/${module.id}/';
+    final url = 'http://109.73.196.253:8001/api/mycourses/${widget.course.slug}/modules/${module.id}/';
     print('Fetching lessons for module ${module.id} from: $url');
 
     try {
@@ -170,7 +170,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   Future<void> _fetchComments() async {
     if (_sessionId == null || _csrfToken == null) return;
 
-    final url = 'http://80.90.187.60:8001/api/mycourses/${widget.course.slug}/';
+    final url = 'http://109.73.196.253:8001/api/mycourses/${widget.course.slug}/';
     print('Fetching comments from: $url');
 
     try {
@@ -223,7 +223,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   }
 
   Future<UserInfo> _fetchUserInfo(int userId) async {
-    final url = 'http://80.90.187.60:8001/api/user/$userId/';
+    final url = 'http://109.73.196.253:8001/api/user/$userId/';
     final response = await http.get(
       Uri.parse(url),
       headers: {
@@ -246,7 +246,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     if (_sessionId == null || _csrfToken == null) return;
 
     // Construct the URL
-    final url = 'http://80.90.187.60:8001/api/mycourses/${widget.course.slug}/review-post/';
+    final url = 'http://109.73.196.253:8001/api/mycourses/${widget.course.slug}/review-post/';
     print('Submitting comment to: $url'); // Debugging information
 
     // Construct the request body

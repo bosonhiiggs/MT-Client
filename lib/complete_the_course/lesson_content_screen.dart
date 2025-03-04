@@ -135,7 +135,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
 
   Future<void> _initializeVideoController(String videoUrl) async {
     _controller = VideoPlayerController.networkUrl(Uri.parse(
-      "http://80.90.187.60:8001/${videoUrl}"
+      "http://109.73.196.253:8001/${videoUrl}"
     ));
     try {
       await _controller!.initialize();
@@ -158,7 +158,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
         headers['X-CSRFToken'] = csrfToken;
       }
 
-      final url = 'http://80.90.187.60:8001/api/mycourses/${widget
+      final url = 'http://109.73.196.253:8001/api/mycourses/${widget
           .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/';
       final response = await http.get(
           Uri.parse(url),
@@ -272,7 +272,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
         headers['X-CSRFToken'] = csrfToken;
       }
 
-      final url = 'http://80.90.187.60:8001/api/mycourses/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/';
+      final url = 'http://109.73.196.253:8001/api/mycourses/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/';
       final response = await http.get(Uri.parse(url), headers: headers);
 
       if (response.statusCode == 200) {
@@ -329,7 +329,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
         headers['X-CSRFToken'] = csrfToken;
       }
 
-      final url = 'http://80.90.187.60:8001/api/mycourses/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/';
+      final url = 'http://109.73.196.253:8001/api/mycourses/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/';
       final response = await http.get(Uri.parse(url), headers: headers);
 
       if (response.statusCode == 200) {
@@ -382,7 +382,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
         headers['X-CSRFToken'] = csrfToken;
       }
 
-      final url = 'http://80.90.187.60:8001/api/mycourses/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/';
+      final url = 'http://109.73.196.253:8001/api/mycourses/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/';
       final response = await http.get(Uri.parse(url), headers: headers);
 
       if (response.statusCode == 200) {
@@ -433,7 +433,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
         headers['X-CSRFToken'] = csrfToken;
       }
 
-      final url = 'http://80.90.187.60:8001/api/mycourses/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/';
+      final url = 'http://109.73.196.253:8001/api/mycourses/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/';
       final response = await http.get(Uri.parse(url), headers: headers);
 
       if (response.statusCode == 200) {
@@ -506,7 +506,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
         headers['X-CSRFToken'] = csrfToken;
       }
 
-      final url = 'http://80.90.187.60:8001/api/mycourses/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/';
+      final url = 'http://109.73.196.253:8001/api/mycourses/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/';
 
       var request = http.MultipartRequest('POST', Uri.parse(url));
       request.headers.addAll(headers);
@@ -548,7 +548,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
       }
 
       final response = await http.get(
-          Uri.parse('http://80.90.187.60:8001/api/mycourses/${widget
+          Uri.parse('http://109.73.196.253:8001/api/mycourses/${widget
               .courseSlug}/modules/${widget.moduleId}/${widget
               .lessonId}/$currentContentId/submission'),
           headers: headers
@@ -590,7 +590,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
   Future<void> _checkReview(int currentContentId, Map<String, String> headers) async {
     try {
       final reviewResponse = await http.get(
-        Uri.parse('http://80.90.187.60:8001/api/mycourses/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$currentContentId/submission/review'),
+        Uri.parse('http://109.73.196.253:8001/api/mycourses/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$currentContentId/submission/review'),
         headers: headers,
       );
 
@@ -622,7 +622,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
     if (sessionid == null || csrfToken == null) return;
 
     // Construct the URL
-    final url = 'http://80.90.187.60:8001/api/mycourses/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/comments/';
+    final url = 'http://109.73.196.253:8001/api/mycourses/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/comments/';
     print(url);
 
     // Construct the request body
@@ -697,7 +697,7 @@ class _LessonContentScreenState extends State<LessonContentScreen> {
   Future<UserInfo> _fetchUserInfo(int userId) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     String? sessionid = prefs.getString('sessionid');
-    final url = 'http://80.90.187.60:8001/api/user/$userId/';
+    final url = 'http://109.73.196.253:8001/api/user/$userId/';
     final response = await http.get(
       Uri.parse(url),
       headers: {

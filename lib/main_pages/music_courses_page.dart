@@ -109,7 +109,7 @@ class _MusicCoursesScreenState extends BaseScreenState<MusicCoursesScreen> {
 
     if (sessionId != null || csrfToken != null) {
       try {
-        final url = 'http://80.90.187.60:8001/api/catalog/';
+        final url = 'http://109.73.196.253:8001/api/catalog/';
         final response = await http.get(
           Uri.parse(url),
           headers: {
@@ -150,7 +150,7 @@ class _MusicCoursesScreenState extends BaseScreenState<MusicCoursesScreen> {
       return;
     }
 
-    final url = 'http://80.90.187.60:8001/api/catalog/${course.slug}/';
+    final url = 'http://109.73.196.253:8001/api/catalog/${course.slug}/';
 
     try {
 
@@ -443,7 +443,7 @@ class _MusicCoursesScreenState extends BaseScreenState<MusicCoursesScreen> {
       throw Exception('SessionID или CSRF токен отсутсвуют');
     }
 
-    final url = 'http://80.90.187.60:8001/api/mycourses/$courseSlug/';
+    final url = 'http://109.73.196.253:8001/api/mycourses/$courseSlug/';
     print('Fetching comments from: $url');
 
     try {
@@ -493,7 +493,7 @@ class _MusicCoursesScreenState extends BaseScreenState<MusicCoursesScreen> {
       throw Exception('SessionID отсутсвует');
     }
 
-    final url = 'http://80.90.187.60:8001/api/user/$userId/';
+    final url = 'http://109.73.196.253:8001/api/user/$userId/';
     final response = await http.get(
       Uri.parse(url),
       headers: {

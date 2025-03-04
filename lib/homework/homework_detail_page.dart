@@ -35,7 +35,7 @@ class HomeworkAnswersList extends StatelessWidget {
 
     if (sessionId != null || csrfToken != null) {
       try {
-        final url = 'http://80.90.187.60:8001/api/mycreations/tasks/${homework.id}/';
+        final url = 'http://109.73.196.253:8001/api/mycreations/tasks/${homework.id}/';
         final response = await http.get(
           Uri.parse(url),
           headers: {
@@ -69,7 +69,7 @@ class HomeworkAnswersList extends StatelessWidget {
     String? sessionId = prefs.getString('sessionid');
     if (sessionId != null) {
       final response = await http.get(
-        Uri.parse('http://80.90.187.60:8001/api/user/$studentId/'),
+        Uri.parse('http://109.73.196.253:8001/api/user/$studentId/'),
         headers: {
           'Content-Type': 'application/json; charset=UTF-8',
           'Cookie': 'sessionid=$sessionId',
