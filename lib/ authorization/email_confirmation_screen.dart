@@ -33,7 +33,7 @@ class _PasswordRecoveryConfirmationCodeScreenState extends State<PasswordRecover
 
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
-
+///хуй
   Future<void> _verifyCode() async {
     final String url = 'http://10.0.2.2:8000/api/auth/signup/confirm';
     final String confirmationCode = _confirmationCodeController.text;
