@@ -27,7 +27,7 @@ class HomeworkList extends StatelessWidget {
 
     if (sessionId != null || csrfToken != null) {
       try {
-        final url = 'http://109.73.196.253:8001/api/mycreations/tasks/';
+        final url = 'http://10.0.2.2:8000/api/mycreations/tasks/';
         final response = await http.get(
           Uri.parse(url),
           headers: {

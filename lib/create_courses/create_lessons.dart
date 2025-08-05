@@ -71,7 +71,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
     String? sessionId = prefs_second.getString('sessionid');
     String? csrfToken = prefs_second.getString('csrftoken');
 
-    final url = 'http://109.73.196.253:8001/api/mycreations/create/${widget.courseSlug}/modules/${widget.moduleId}';
+    final url = 'http://10.0.2.2:8000/api/mycreations/create/${widget.courseSlug}/modules/${widget.moduleId}';
 
     print('Loading lessons with URL: $url');
 
@@ -137,7 +137,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
   }
 
   Future<void> _updateModuleTitle(String newTitle) async {
-    final url = 'http://109.73.196.253:8001/api/mycreations/create/${widget.courseSlug}/modules/${widget.moduleId}';
+    final url = 'http://10.0.2.2:8000/api/mycreations/create/${widget.courseSlug}/modules/${widget.moduleId}';
     final msgJson = json.encode({'title': newTitle});
 
     print('Updating module title with URL: $url');
@@ -176,7 +176,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
       lessonTitle = 'Новый урок';
     }
 
-    final url = 'http://109.73.196.253:8001/api/mycreations/create/${widget.courseSlug}/modules/${widget.moduleId}';
+    final url = 'http://10.0.2.2:8000/api/mycreations/create/${widget.courseSlug}/modules/${widget.moduleId}';
     final msgJson = json.encode({'title': lessonTitle});
 
     print('Creating lesson with URL: $url');
@@ -219,7 +219,7 @@ class _CreateLessonPageState extends State<CreateLessonPage> {
   }
 
   Future<bool> _deleteLesson(String lessonId, int index) async {
-    final url = 'http://109.73.196.253:8001/api/mycreations/create/${widget.courseSlug}/modules/${widget.moduleId}/$lessonId/';
+    final url = 'http://10.0.2.2:8000/api/mycreations/create/${widget.courseSlug}/modules/${widget.moduleId}/$lessonId/';
 
     print('Deleting lesson with URL: $url');
 

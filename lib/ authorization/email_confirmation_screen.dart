@@ -35,7 +35,7 @@ class _PasswordRecoveryConfirmationCodeScreenState extends State<PasswordRecover
   }
 
   Future<void> _verifyCode() async {
-    final String url = 'http://109.73.196.253:8001/api/auth/signup/confirm';
+    final String url = 'http://10.0.2.2:8000/api/auth/signup/confirm';
     final String confirmationCode = _confirmationCodeController.text;
 
     try {

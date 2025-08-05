@@ -133,7 +133,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
         headers['X-CSRFToken'] = csrfToken;
       }
 
-      final url = 'http://109.73.196.253:8001/api/mycreations/create/${widget
+      final url = 'http://10.0.2.2:8000/api/mycreations/create/${widget
           .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/';
       final response = await http.get(
           Uri.parse(url),
@@ -185,7 +185,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
         headers['X-CSRFToken'] = csrfToken;
       }
 
-      final url = 'http://109.73.196.253:8001/api/mycreations/create/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/';
+      final url = 'http://10.0.2.2:8000/api/mycreations/create/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/';
       final response = await http.get(Uri.parse(url), headers: headers);
 
       if (response.statusCode == 200) {
@@ -296,7 +296,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       headers['X-CSRFToken'] = csrfToken;
     }
 
-    final url = 'http://109.73.196.253:8001/api/mycreations/create/${widget
+    final url = 'http://10.0.2.2:8000/api/mycreations/create/${widget
         .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/';
 
     final requestBody = {
@@ -335,7 +335,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       headers['X-CSRFToken'] = csrfToken;
     }
 
-    final url = 'http://109.73.196.253:8001/api/mycreations/create/${widget
+    final url = 'http://10.0.2.2:8000/api/mycreations/create/${widget
         .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/task/';
 
     final requestBody = {
@@ -375,7 +375,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       headers['X-CSRFToken'] = csrfToken;
     }
 
-    final url = 'http://109.73.196.253:8001/api/mycreations/create/${widget
+    final url = 'http://10.0.2.2:8000/api/mycreations/create/${widget
         .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/text/';
 
     final requestBody = {
@@ -415,7 +415,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       headers['X-CSRFToken'] = csrfToken;
     }
 
-    final url = 'http://109.73.196.253:8001/api/mycreations/create/${widget
+    final url = 'http://10.0.2.2:8000/api/mycreations/create/${widget
         .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/';
 
     try {
@@ -450,7 +450,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       headers['X-CSRFToken'] = csrfToken;
     }
 
-    final url = 'http://109.73.196.253:8001/api/mycreations/create/${widget
+    final url = 'http://10.0.2.2:8000/api/mycreations/create/${widget
         .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/task/';
 
     final requestBody = {
@@ -490,7 +490,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       headers['X-CSRFToken'] = csrfToken;
     }
 
-    final url = 'http://109.73.196.253:8001/api/mycreations/create/${widget
+    final url = 'http://10.0.2.2:8000/api/mycreations/create/${widget
         .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/text/';
 
     final requestBody = {
@@ -531,7 +531,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       headers['X-CSRFToken'] = csrfToken;
     }
 
-    final url = 'http://109.73.196.253:8001/api/mycreations/create/${widget
+    final url = 'http://10.0.2.2:8000/api/mycreations/create/${widget
         .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/file/';
 
     var request = http.MultipartRequest('POST', Uri.parse(url))
@@ -579,7 +579,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
         headers['X-CSRFToken'] = csrfToken;
       }
 
-      final url = 'http://109.73.196.253:8001/api/mycreations/create/${widget
+      final url = 'http://10.0.2.2:8000/api/mycreations/create/${widget
           .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/'; // URL для удаления видео
       final response = await http.delete(Uri.parse(url), headers: headers);
       print(url);
@@ -607,7 +607,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       headers['X-CSRFToken'] = csrfToken;
     }
 
-    final url = 'http://109.73.196.253:8001/api/mycreations/create/${widget
+    final url = 'http://10.0.2.2:8000/api/mycreations/create/${widget
         .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/question/';
 
     final requestBody = {
@@ -650,7 +650,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       headers['X-CSRFToken'] = csrfToken;
     }
 
-    final url = 'http://109.73.196.253:8001/api/mycreations/create/${widget
+    final url = 'http://10.0.2.2:8000/api/mycreations/create/${widget
         .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/$contentId/';
 
     try {
@@ -684,7 +684,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       headers['X-CSRFToken'] = csrfToken;
     }
 
-    final url = 'http://109.73.196.253:8001/api/mycreations/create/${widget
+    final url = 'http://10.0.2.2:8000/api/mycreations/create/${widget
         .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/question/';
 
     final requestBody = {
@@ -727,7 +727,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       headers['X-CSRFToken'] = csrfToken;
     }
 
-    final url = 'http://109.73.196.253:8001/api/mycreations/create/${widget
+    final url = 'http://10.0.2.2:8000/api/mycreations/create/${widget
         .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/answer/';
 
     final requestBody = {
@@ -773,7 +773,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       headers['X-CSRFToken'] = csrfToken;
     }
 
-    final url = 'http://109.73.196.253:8001/api/mycreations/create/${widget
+    final url = 'http://10.0.2.2:8000/api/mycreations/create/${widget
         .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/answer/';
 
     final requestBody = {
@@ -824,7 +824,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       headers['X-CSRFToken'] = csrfToken;
     }
 
-    final url = 'http://109.73.196.253:8001/api/mycreations/create/${widget
+    final url = 'http://10.0.2.2:8000/api/mycreations/create/${widget
         .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/answer/${correctAnswerId}';
 
     final requestBody = {
@@ -869,7 +869,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       headers['X-CSRFToken'] = csrfToken;
     }
 
-    final url = 'http://109.73.196.253:8001/api/mycreations/create/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/answer/${answerId}';
+    final url = 'http://10.0.2.2:8000/api/mycreations/create/${widget.courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/answer/${answerId}';
 
     final requestBody = {
       "text": answerText,
@@ -930,7 +930,7 @@ class _CreateLessonPage2State extends State<CreateLessonPage2> {
       headers['X-CSRFToken'] = csrfToken;
     }
 
-    final url = 'http://109.73.196.253:8001/api/mycreations/create/${widget
+    final url = 'http://10.0.2.2:8000/api/mycreations/create/${widget
         .courseSlug}/modules/${widget.moduleId}/${widget.lessonId}/answer/${answerForDeleteId}';
 
     try {

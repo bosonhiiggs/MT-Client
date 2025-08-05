@@ -12,7 +12,7 @@ class _PasswordRecoveryScreenState extends State<PasswordRecoveryScreen> {
   final emailController = TextEditingController();
 
   Future<void> sendPasswordRecoveryRequest(String email) async {
-    final url = Uri.parse('http://109.73.196.253:8001/api/auth/reset-request/');
+    final url = Uri.parse('http://10.0.2.2:8000/api/auth/reset-request/');
     try {
       final response = await http.post(
         url,

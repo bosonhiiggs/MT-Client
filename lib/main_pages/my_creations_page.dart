@@ -112,7 +112,7 @@ class _MyCreationsScreenState extends BaseScreenState<MyCreationsScreen> {
 
     if (sessionId != null || csrfToken != null) {
       try {
-        final url = 'http://109.73.196.253:8001/api/mycreations/';
+        final url = 'http://10.0.2.2:8000/api/mycreations/';
         final response = await http.get(
           Uri.parse(url),
           headers: {
@@ -142,7 +142,7 @@ class _MyCreationsScreenState extends BaseScreenState<MyCreationsScreen> {
 
   Future<void> _changeCourseApprovalStatus(String slug) async {
     // print("Disaproove this server");
-    final url = 'http://109.73.196.253:8001/api/mycreations/$slug/approve/';
+    final url = 'http://10.0.2.2:8000/api/mycreations/$slug/approve/';
 
     final response = await http.patch(
       Uri.parse(url),

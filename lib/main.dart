@@ -91,7 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
 
   Future<void> _login() async {
-    String url = 'http://109.73.196.253:8001/api/auth/login/';
+    String url = 'http://10.0.2.2:8000/api/auth/login/';
     String username = _loginController.text.trim();
     String password = _passwordController.text.trim();
 

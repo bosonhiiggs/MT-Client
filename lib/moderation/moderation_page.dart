@@ -31,7 +31,7 @@ class _ModerationPageState extends BaseScreenState<ModerationPage> {
     if (sessionId != null) {
       try {
         final response = await http.get(
-          Uri.parse('http://109.73.196.253:8001/api/moderation/'),
+          Uri.parse('http://10.0.2.2:8000/api/moderation/'),
           headers: {
             'Content-Type': 'application/json; charset=UTF-8',
             'Cookie': 'sessionid=$sessionId',
